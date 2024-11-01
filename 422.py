@@ -57,7 +57,7 @@ def main():
         sampler = noisy_circuit.compile_sampler()
         results = sampler.sample(shots=shots)  
 
-        # for each p_phy divide number of detection events by number of circuit iterations which had an error 
+        # for each p_phy divide number of detection events by number of circuit iterations which (statistically) had an error 
         rate = sum(1 for row in results if any(row))/(shots*(1-(1-p_phy)**33 ))
         rates.append(rate)
 
