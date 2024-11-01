@@ -4,7 +4,7 @@ import numpy as np
 from matplotlib import pyplot as plt 
 
 
-def vanilla422(p_depol = 0):
+def vanilla422():
     # Encoding 
     circuit = Circuit('''
     H 3
@@ -28,38 +28,44 @@ def vanilla422(p_depol = 0):
         M 5
     ''')
 
-    if p_depol != 0:
-        noisy_circuit = stim.Circuit()
-        for operation in circuit:
-            operation = str(operation).split(' ')
-            gate = operation[0]
-            target_qubits = np.array(operation[1:]).astype(int)
-            # Apply original gate
-            noisy_circuit.append_operation(gate, target_qubits)
+    return circuit
 
-            # Apply depolarizing noise after each gate
-            for target in target_qubits:
-                noisy_circuit.append_operation("DEPOLARIZE1", [target], p_depol)
+def noisyvanilla422(circuit, p_depol = 0):
+    noisy_circuit = stim.Circuit()
+    for operation in circuit:
+        operation = str(operation).split(' ')
+        gate = operation[0]
+        target_qubits = np.array(operation[1:]).astype(int)
+        # Apply original gate
+        noisy_circuit.append_operation(gate, target_qubits)
 
-    else:
-        noisy_circuit = circuit
-
+        # Apply depolarizing noise after each gate (33 in total)
+        for target in target_qubits:
+            noisy_circuit.append_operation("DEPOLARIZE1", [target], p_depol)
     return noisy_circuit
 
-# print(circuit.diagram())
 
-ps_phy = array = np.arange(0, .2, 0.001)
-shots = 10
+def main():
+    ps_phy = array = np.arange(0, .3, .001)
+    shots = 1000000
+    rates = []
 
-rates = []
-for p_phy in ps_phy:
-    circuit = vanilla422(p_phy)
-    sampler = circuit.compile_sampler()
-    results = sampler.sample(shots=shots)  
-    rate = sum(1 for row in results if any(row))/shots
-    rates.append(rate)
+    # iterate over physical error rates
+    circuit = vanilla422()
+    for p_phy in ps_phy:
+        noisy_circuit = noisyvanilla422(circuit, p_phy)
+        sampler = noisy_circuit.compile_sampler()
+        results = sampler.sample(shots=shots)  
 
-plt.plot(ps_phy,rates)
-# plt.show()
-# plt.savefig('singlequbitdepolarizing')
+        # for each p_phy divide number of detection events by number of circuit iterations which had an error 
+        rate = sum(1 for row in results if any(row))/(shots*(1-(1-p_phy)**33 ))
+        rates.append(rate)
 
+    plt.xlabel("probability of depolarizing error after each gate")
+    plt.ylabel("error detection rate")
+    plt.plot(ps_phy,rates)
+    # plt.show()
+    plt.savefig('singlequbitdepolarizing')
+
+if __name__ == "__main__":
+    main()
