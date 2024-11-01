@@ -3,6 +3,7 @@ from stim import Circuit
 import numpy as np
 from matplotlib import pyplot as plt 
 
+
 def vanilla422(p_depol = 0):
     # Encoding 
     circuit = Circuit('''
