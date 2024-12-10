@@ -3,6 +3,7 @@ from stim import Circuit
 import numpy as np
 from matplotlib import pyplot as plt 
 import pymatching
+import itertools
 
 
 def vanilla422():
@@ -155,6 +156,78 @@ def floquet422(L):
        
     return circuit
 
+def altfloquet422(L):
+    circuit = Circuit()
+    def measurex(target_qubits, ancilla):
+        return Circuit(f'''
+                            H {ancilla}
+                            CX {' '.join(f'{ancilla} {x}' for x in target_qubits)}
+                            H {ancilla}
+                            M {ancilla}
+                            R {ancilla}
+                            ''')
+    
+    def measurez(target_qubits, ancilla):
+        return Circuit(f'''
+                            CX {' '.join(f'{x} {ancilla}' for x in target_qubits)}
+                            M {ancilla}
+                            R {ancilla}
+                            ''')
+
+    for _ in range(L):
+        circuit += measurex([0,1],6)
+        circuit += measurex([3,4],6)
+
+        circuit += measurez([1,4],6)
+        circuit += measurez([1,4],6)
+
+        circuit += measurex([1,2],6)
+        circuit += measurex([4,5],6)
+
+        circuit += measurez([2],6)
+        circuit += measurez([2],6)
+        circuit += measurez([5],6)
+        circuit += measurez([5],6)
+        circuit += Circuit('''H 0 1 3 4''')
+
+        circuit += measurex([0,2],6)
+        circuit += measurex([3,5],6)
+
+        circuit += measurez([0,3],6)
+        circuit += measurez([0,3],6)
+
+        circuit += measurex([0,1],6)
+        circuit += measurex([3,4],6)
+
+
+        circuit += measurez([1],6)
+        circuit += measurez([1],6)
+        circuit += measurez([4],6)
+        circuit += measurez([4],6)
+
+        circuit += measurex([1,2],6)
+        circuit += measurex([4,5],6)
+
+        circuit += measurez([2,5],6)
+        circuit += measurez([2,5],6)
+
+
+        circuit += measurex([0,2],6)
+        circuit += measurex([3,5],6)
+
+        circuit += measurez([0],6)
+        circuit += measurez([0],6)
+        circuit += measurez([3],6)
+        circuit += measurez([3],6)
+        circuit += Circuit('''H 1 2 4 5''')
+
+        circuit.append("DETECTOR", [stim.target_rec(-20),stim.target_rec(-19), stim.target_rec(-6), stim.target_rec(-5)])
+
+        circuit += Circuit(f'''   
+                    OBSERVABLE_INCLUDE(0) rec[-3] rec[-23] rec[-26] rec[-30] 
+            ''')
+    return circuit
+
 def addnoise(circuit, faulty_gates, single_qubit_noise = 0, multi_qubit_noise = 0):
     noisy_circuit = stim.Circuit()
     for operation in circuit:
@@ -205,18 +278,30 @@ def log_err_counter(circuits, single_qubit_noise, multi_qubit_noise, num_shots):
     plt.legend()
     plt.show()
 
+def detector_finder(circuit):
+    sampler = circuit.compile_detector_sampler() 
+    detection_events, observable_flips = sampler.sample(100, separate_observables=True)
+    dem = circuit.detector_error_model()
+    simulator = stim.TableauSimulator()
+    simulator.do(circuit)
+    stabilizers = simulator.canonical_stabilizers()
+    tableau = simulator.current_inverse_tableau()
+    num_qubits = 6
+    for i in range(num_qubits):
+        logical_x = tableau.x_output(i)
+        logical_z = tableau.z_output(i)
+        print(f"Qubit {i}: Logical X = {logical_x}, Logical Z = {logical_z}")
+    return 0
+
+
 def main():
-    circ0 = periodic422(5)
-    circ1 = periodic422(10)
-    circ2 = periodic422(15)
+    circuit = altfloquet422(2)
+    dem = circuit.detector_error_model(decompose_errors=True)
+    # print(dem)
+    # sampler = circuit.compile_detector_sampler()
+    # detection_events, observable_flips = sampler.sample(100, separate_observables=True)
+    # print(detection_events, observable_flips)
 
-    circ3 = floquet422(5)
-    circ4 = floquet422(10)
-    circ5 = floquet422(15)
     
-   
-    log_err_counter([circ0,circ1,circ2,circ3,circ4,circ5], np.logspace(-4,-.7,5),np.logspace(-4,-.7,5) , 100000)
-
-
 if __name__ == "__main__":
     main()
