@@ -3,8 +3,6 @@ from stim import Circuit
 import numpy as np
 from matplotlib import pyplot as plt 
 import pymatching
-import itertools
-
 
 def vanilla422():
     # Encoding 
@@ -88,7 +86,7 @@ def periodic422(t):
 
     return circuit
 
-def floquet422(L):
+def natfloquet422(L):
     def measurex(target_qubits, ancilla):
         return Circuit(f'''
                             H {ancilla}
@@ -156,7 +154,7 @@ def floquet422(L):
        
     return circuit
 
-def altfloquet422(L):
+def dpfloquet422(L):
     circuit = Circuit()
     def measurex(target_qubits, ancilla):
         return Circuit(f'''
@@ -174,57 +172,69 @@ def altfloquet422(L):
                             R {ancilla}
                             ''')
 
-    for _ in range(L):
-        circuit += measurex([0,1],6)
-        circuit += measurex([3,4],6)
+    for l in range(L):
+        circuit += Circuit('''M 0 1 2 3 4 5''')
 
-        circuit += measurez([1,4],6)
-        circuit += measurez([1,4],6)
+        circuit += measurez([0,1],6)
+        circuit += measurez([3,4],6)
 
-        circuit += measurex([1,2],6)
-        circuit += measurex([4,5],6)
+        circuit += measurex([1,4],6)
+        circuit += measurex([1,4],6)
 
-        circuit += measurez([2],6)
-        circuit += measurez([2],6)
-        circuit += measurez([5],6)
-        circuit += measurez([5],6)
+        circuit += measurez([1,2],6)
+        circuit += measurez([4,5],6)
+
+        circuit += measurex([2],6)
+        circuit += measurex([2],6)
+        circuit += measurex([5],6)
+        circuit += measurex([5],6)
         circuit += Circuit('''H 0 1 3 4''')
 
-        circuit += measurex([0,2],6)
-        circuit += measurex([3,5],6)
+        circuit += measurez([0,2],6)
+        circuit += measurez([3,5],6)
 
-        circuit += measurez([0,3],6)
-        circuit += measurez([0,3],6)
+        circuit += measurex([0,3],6)
+        circuit += measurex([0,3],6)
 
-        circuit += measurex([0,1],6)
-        circuit += measurex([3,4],6)
-
-
-        circuit += measurez([1],6)
-        circuit += measurez([1],6)
-        circuit += measurez([4],6)
-        circuit += measurez([4],6)
-
-        circuit += measurex([1,2],6)
-        circuit += measurex([4,5],6)
-
-        circuit += measurez([2,5],6)
-        circuit += measurez([2,5],6)
+        circuit += measurez([0,1],6)
+        circuit += measurez([3,4],6)
 
 
-        circuit += measurex([0,2],6)
-        circuit += measurex([3,5],6)
+        circuit += measurex([1],6)
+        circuit += measurex([1],6)
+        circuit += measurex([4],6)
+        circuit += measurex([4],6)
 
-        circuit += measurez([0],6)
-        circuit += measurez([0],6)
-        circuit += measurez([3],6)
-        circuit += measurez([3],6)
+        circuit += measurez([1,2],6)
+        circuit += measurez([4,5],6)
+
+        circuit += measurex([2,5],6)
+        circuit += measurex([2,5],6)
+
+
+        circuit += measurez([0,2],6)
+        circuit += measurez([3,5],6)
+
+        circuit += measurex([0],6)
+        circuit += measurex([0],6)
+        circuit += measurex([3],6)
+        circuit += measurex([3],6)
         circuit += Circuit('''H 1 2 4 5''')
 
-        circuit.append("DETECTOR", [stim.target_rec(-20),stim.target_rec(-19), stim.target_rec(-6), stim.target_rec(-5)])
+        circuit += Circuit('''M 0 1 2 3 4 5''')
 
-        circuit += Circuit(f'''   
-                    OBSERVABLE_INCLUDE(0) rec[-3] rec[-23] rec[-26] rec[-30] 
+        circuit.append("DETECTOR", [stim.target_rec(-1),stim.target_rec(-2),stim.target_rec(-4),stim.target_rec(-5),stim.target_rec(-37), stim.target_rec(-38), stim.target_rec(-40), stim.target_rec(-41), stim.target_rec(-8),stim.target_rec(-10), stim.target_rec(-27), stim.target_rec(-29), stim.target_rec(-31), stim.target_rec(-32), stim.target_rec(-35), stim.target_rec(-36),  stim.target_rec(-13), stim.target_rec(-14), stim.target_rec(-23), stim.target_rec(-24)])
+
+
+        if l == L-1:
+            # Observable in last step
+            circuit += Circuit(f'''   
+                    OBSERVABLE_INCLUDE(0) rec[-10] rec[-29] rec[-32] rec[-36] rec[-4] rec[-5]
+            ''')
+        else:
+            # Observable in intermediate steps
+            circuit += Circuit(f'''   
+                    OBSERVABLE_INCLUDE(0) rec[-10] rec[-29] rec[-32] rec[-36]  
             ''')
     return circuit
 
@@ -250,7 +260,7 @@ def addnoise(circuit, faulty_gates, single_qubit_noise = 0, multi_qubit_noise = 
             noisy_circuit += Circuit(f'''{gate} {" ".join(target_qubits)}''')
     return noisy_circuit
 
-def log_err_counter(circuits, single_qubit_noise, multi_qubit_noise, num_shots):
+def log_err_counter(circuits, single_qubit_noise, multi_qubit_noise, num_shots, colors, labels):
     for t,circ in enumerate(circuits):
         xs = []
         ys = []
@@ -271,12 +281,13 @@ def log_err_counter(circuits, single_qubit_noise, multi_qubit_noise, num_shots):
             xs.append(noise)
             ys.append(num_errors / num_shots)
         
-        plt.plot(xs, ys, label="circuit" + str(t))
+        plt.plot(xs, ys, label=labels[t], color = colors[t])
     plt.loglog()
     plt.xlabel("physical error rate")
     plt.ylabel("logical error rate per shot")
     plt.legend()
-    plt.show()
+    # plt.show()
+    # plt.savefig('422comparison')
 
 def detector_finder(circuit):
     sampler = circuit.compile_detector_sampler() 
@@ -295,11 +306,23 @@ def detector_finder(circuit):
 
 
 def main():
-    circuit = altfloquet422(2)
-    dem = circuit.detector_error_model(decompose_errors=True)
+    van1 = periodic422(1)
+    van2 = periodic422(2)
+    van3 = periodic422(3)
+
+    floq1 = natfloquet422(1)
+    floq2 = natfloquet422(2)
+    floq3 = natfloquet422(3)
+
+    dpfl1 = dpfloquet422(1)
+    dpfl2 = dpfloquet422(2)
+    dpfl3 = dpfloquet422(3)
+
+    log_err_counter([van1, van2, van3, floq1, floq2, floq3, dpfl1, dpfl2, dpfl3], np.logspace(-4,-.7,10), np.logspace(-3,-.7,10), 10000, ['r','r','r','b','b','b','g','g','g'], ['vanilla 1','vanilla 2','vanilla 3', 'nat Floq 1','nat Floq 2','nat Floq 3', 'dp Floq 1','dp Floq 2','dp Floq 3'])
+    # dem = circuit.detector_error_model(decompose_errors=True)
     # print(dem)
-    # sampler = circuit.compile_detector_sampler()
-    # detection_events, observable_flips = sampler.sample(100, separate_observables=True)
+    # sampler = noisy.compile_detector_sampler()
+    # detection_events, observable_flips = sampler.sample(5, separate_observables=True)
     # print(detection_events, observable_flips)
 
     
