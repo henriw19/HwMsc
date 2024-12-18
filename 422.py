@@ -30,12 +30,11 @@ def vanilla422():
 
     return circuit
 
-def periodic422(L):
-    circuit = Circuit("M 0 1 2 3")
-    
+def periodic422(L):   
+    circuit = Circuit()
+ 
     for i in range(L):
         # Syndrome extraction
-
         # XXXX
         circuit += Circuit('''     
             H 5
@@ -60,18 +59,17 @@ def periodic422(L):
         if i > 0:
             circuit.append("DETECTOR", [stim.target_rec(-1), stim.target_rec(-3)])
         else:
-            circuit.append("DETECTOR", [stim.target_rec(-1), stim.target_rec(-3), stim.target_rec(-4), stim.target_rec(-5),stim.target_rec(-6)])
+            circuit.append("DETECTOR", [stim.target_rec(-1)])
     
     circuit += Circuit("M 0 1 2 3")
 
-    if i == L-1:
-        circuit.append("DETECTOR", [stim.target_rec(-1), stim.target_rec(-2), stim.target_rec(-3), stim.target_rec(-4),stim.target_rec(-5)])
+    
+    circuit.append("DETECTOR", [stim.target_rec(-1), stim.target_rec(-2), stim.target_rec(-3), stim.target_rec(-4),stim.target_rec(-5)])
     
     # measure logical Z
     circuit += Circuit('''   
         OBSERVABLE_INCLUDE(0) rec[-1] rec[-4] 
     ''')
-    
     return circuit
 
 def nafloquet422(L):
@@ -115,24 +113,50 @@ def nafloquet422(L):
             # outer hexagon measurement #2
             circuit += m[t%2]([(t * 2 + 9) % 12, (t * 2 + 11) % 12], 18)
 
-        circuit += Circuit(''' M 0 1 2 3 4 5 6 7 8 9 10 11''')
-
+        if l < L-1:
+            circuit += Circuit('''   
+                        OBSERVABLE_INCLUDE(0) rec[-40] rec[-37] rec[-26] rec[-23] rec[-12] rec[-9] 
+                ''')
             
                 
         # total measurements per period: 7 * 6 = 42
-        circuit.append("DETECTOR", [stim.target_rec(-54), stim.target_rec(-53), stim.target_rec(-49), stim.target_rec(-48), stim.target_rec(-26), stim.target_rec(-25), stim.target_rec(-24), stim.target_rec(-23)])
         
-        # measure logical Z
+        # contained z detector
+        circuit.append("DETECTOR", [stim.target_rec(-42), stim.target_rec(-41), stim.target_rec(-37), stim.target_rec(-36), stim.target_rec(-14), stim.target_rec(-13), stim.target_rec(-12), stim.target_rec(-11)])
+        
+        # contained x detector
+        circuit.append("DETECTOR", [stim.target_rec(-35), stim.target_rec(-34), stim.target_rec(-30), stim.target_rec(-29), stim.target_rec(-7), stim.target_rec(-6), stim.target_rec(-5), stim.target_rec(-4)])
+
+        if l > 1:
+            # overlap z
+            circuit.append("DETECTOR", [stim.target_rec(-28-42), stim.target_rec(-27-42), stim.target_rec(-23-42), stim.target_rec(-22-42), stim.target_rec(-42), stim.target_rec(-41), stim.target_rec(-40), stim.target_rec(-39)])
+            
+            # overlap x
+            circuit.append("DETECTOR", [stim.target_rec(-21-42), stim.target_rec(-20-42), stim.target_rec(-16-42), stim.target_rec(-15-42), stim.target_rec(-35), stim.target_rec(-34), stim.target_rec(-33), stim.target_rec(-32)])
+
+            # overlap z
+            circuit.append("DETECTOR", [stim.target_rec(-14-42), stim.target_rec(-13-42), stim.target_rec(-9-42), stim.target_rec(-8-42), stim.target_rec(-28), stim.target_rec(-27), stim.target_rec(-26), stim.target_rec(-25)])
+
+            # overlap x
+            circuit.append("DETECTOR", [stim.target_rec(-7-42), stim.target_rec(-6-42), stim.target_rec(-2-42), stim.target_rec(-1-42), stim.target_rec(-21), stim.target_rec(-20), stim.target_rec(-19), stim.target_rec(-18)])
+
+        if l == 0:
+            # initial cut off z detectors
+            circuit.append("DETECTOR", [stim.target_rec(-42), stim.target_rec(-41), stim.target_rec(-40), stim.target_rec(-39)])
+            circuit.append("DETECTOR", [stim.target_rec(-28), stim.target_rec(-27), stim.target_rec(-26), stim.target_rec(-25)])
+
     
-        if l == L-1:
-            circuit += Circuit('''   
-                    OBSERVABLE_INCLUDE(0) rec[-52] rec[-49] rec[-38] rec[-35] rec[-24] rec[-21] rec[-4] rec[-6] rec[-10] rec[-12] 
-            ''')
-        else:
-            circuit += Circuit('''   
-                    OBSERVABLE_INCLUDE(0) rec[-52] rec[-49] rec[-38] rec[-35] rec[-24] rec[-21] 
-            ''')
-       
+    circuit += Circuit(''' M 0 1 2 3 4 5 6 7 8 9 10 11''')
+    
+    # final cut off z detectors
+    circuit.append("DETECTOR", [stim.target_rec(-28-12), stim.target_rec(-27-12), stim.target_rec(-23-12), stim.target_rec(-22-12), stim.target_rec(-7), stim.target_rec(-8), stim.target_rec(-9), stim.target_rec(-10), stim.target_rec(-11), stim.target_rec(-12)])
+    circuit.append("DETECTOR", [stim.target_rec(-14-12), stim.target_rec(-13-12), stim.target_rec(-9-12), stim.target_rec(-8-12), stim.target_rec(-3), stim.target_rec(-4), stim.target_rec(-5), stim.target_rec(-6), stim.target_rec(-7), stim.target_rec(-8)])
+
+    
+    # measure logical Z
+    circuit += Circuit('''   
+            OBSERVABLE_INCLUDE(0) rec[-52] rec[-49] rec[-38] rec[-35] rec[-24] rec[-21] rec[-4] rec[-6] rec[-10] rec[-12] 
+    ''')   
     return circuit
 
 def dpfloquet422(L):
@@ -152,177 +176,105 @@ def dpfloquet422(L):
                             M {ancilla}
                             R {ancilla}
                             ''')
-
+    
     for l in range(L):
-        circuit += measurez([0,1],6)
-        circuit += measurez([3,4],6)
+        for _ in range(2):
+            circuit += measurez([0,1],6)
+            circuit += measurez([3,4],6)
 
-        circuit += measurex([1,4],6)
-        circuit += measurex([1,4],6)
-        circuit.append("DETECTOR", [stim.target_rec(-1), stim.target_rec(-2)])
+            circuit += measurex([1,4],6)
+            circuit += measurex([1,4],6)
+            circuit.append("DETECTOR", [stim.target_rec(-1), stim.target_rec(-2)])
 
+            circuit += measurez([1,2],6)
+            circuit += measurez([4,5],6)
 
-        circuit += measurez([1,2],6)
-        circuit += measurez([4,5],6)
+            circuit += measurex([2],6)
+            circuit += measurex([2],6)
+            circuit.append("DETECTOR", [stim.target_rec(-1), stim.target_rec(-2)])
+            circuit += measurex([5],6)
+            circuit += measurex([5],6)
+            circuit.append("DETECTOR", [stim.target_rec(-1), stim.target_rec(-2)])
 
-        circuit += measurex([2],6)
-        circuit += measurex([2],6)
-        circuit.append("DETECTOR", [stim.target_rec(-1), stim.target_rec(-2)])
-        circuit += measurex([5],6)
-        circuit += measurex([5],6)
-        circuit.append("DETECTOR", [stim.target_rec(-1), stim.target_rec(-2)])
+            circuit += Circuit('''H 0 1 3 4''')
 
-        circuit += Circuit('''H 0 1 3 4''')
+            circuit += measurez([0,2],6)
+            circuit += measurez([3,5],6)
 
-        circuit += measurez([0,2],6)
-        circuit += measurez([3,5],6)
+            circuit += measurex([0,3],6)
+            circuit += measurex([0,3],6)
+            circuit.append("DETECTOR", [stim.target_rec(-1), stim.target_rec(-2)])
 
-        circuit += measurex([0,3],6)
-        circuit += measurex([0,3],6)
-        circuit.append("DETECTOR", [stim.target_rec(-1), stim.target_rec(-2)])
+            circuit += measurez([0,1],6)
+            circuit += measurez([3,4],6)
 
+            circuit += measurex([1],6)
+            circuit += measurex([1],6)
+            circuit.append("DETECTOR", [stim.target_rec(-1), stim.target_rec(-2)])
+            circuit += measurex([4],6)
+            circuit += measurex([4],6)
+            circuit.append("DETECTOR", [stim.target_rec(-1), stim.target_rec(-2)])
+            
+            circuit += Circuit('''H 0 2 3 5''')
 
-        circuit += measurez([0,1],6)
-        circuit += measurez([3,4],6)
+            circuit += measurez([1,2],6)
+            circuit += measurez([4,5],6)
 
-        
-
-
-        circuit += measurex([1],6)
-        circuit += measurex([1],6)
-        circuit.append("DETECTOR", [stim.target_rec(-1), stim.target_rec(-2)])
-        circuit += measurex([4],6)
-        circuit += measurex([4],6)
-        circuit.append("DETECTOR", [stim.target_rec(-1), stim.target_rec(-2)])
-        circuit += Circuit('''H 0 2 3 5''')
-
-        circuit += measurez([1,2],6)
-        circuit += measurez([4,5],6)
-
-        circuit += measurex([2,5],6)
-        circuit += measurex([2,5],6)
-        circuit.append("DETECTOR", [stim.target_rec(-1), stim.target_rec(-2)])
+            circuit += measurex([2,5],6)
+            circuit += measurex([2,5],6)
+            circuit.append("DETECTOR", [stim.target_rec(-1), stim.target_rec(-2)])
 
 
-        circuit += measurez([0,2],6)
-        circuit += measurez([3,5],6)
+            circuit += measurez([0,2],6)
+            circuit += measurez([3,5],6)
 
-        circuit += measurex([0],6)
-        circuit += measurex([0],6)
-        circuit.append("DETECTOR", [stim.target_rec(-1), stim.target_rec(-2)])
-        circuit += measurex([3],6)
-        circuit += measurex([3],6)
-        circuit.append("DETECTOR", [stim.target_rec(-1), stim.target_rec(-2)])
-        circuit += Circuit('''H 1 2 4 5''')
-
-        #  2nd period
-
-        circuit += measurez([0,1],6)
-        circuit += measurez([3,4],6)
-
-        circuit += measurex([1,4],6)
-        circuit += measurex([1,4],6)
-        circuit.append("DETECTOR", [stim.target_rec(-1), stim.target_rec(-2)])
+            circuit += measurex([0],6)
+            circuit += measurex([0],6)
+            circuit.append("DETECTOR", [stim.target_rec(-1), stim.target_rec(-2)])
+            circuit += measurex([3],6)
+            circuit += measurex([3],6)
+            circuit.append("DETECTOR", [stim.target_rec(-1), stim.target_rec(-2)])
+            
+            circuit += Circuit('''H 1 2 4 5''')
 
 
-        circuit += measurez([1,2],6)
-        circuit += measurez([4,5],6)
+        # 1st contained
+        circuit.append("DETECTOR", [stim.target_rec(-29-30), stim.target_rec(-30-30), stim.target_rec(-21-30), stim.target_rec(-23-30), stim.target_rec(-12-30), stim.target_rec(-14-30), stim.target_rec(-5-30), stim.target_rec(-6-30)])
 
-        circuit += measurex([2],6)
-        circuit += measurex([2],6)
-        circuit.append("DETECTOR", [stim.target_rec(-1), stim.target_rec(-2)])
-        circuit += measurex([5],6)
-        circuit += measurex([5],6)
-        circuit.append("DETECTOR", [stim.target_rec(-1), stim.target_rec(-2)])
-        
-        circuit += Circuit('''H 0 1 3 4''')
+        #2nd contained
+        circuit.append("DETECTOR", [stim.target_rec(-19-30), stim.target_rec(-20-30), stim.target_rec(-11-30), stim.target_rec(-13-30), stim.target_rec(-2-30), stim.target_rec(-4-30), stim.target_rec(-25), stim.target_rec(-26)])
 
-        circuit += measurez([0,2],6)
-        circuit += measurez([3,5],6)
-
-        circuit += measurex([0,3],6)
-        circuit += measurex([0,3],6)
-        circuit.append("DETECTOR", [stim.target_rec(-1), stim.target_rec(-2)])
-
-
-        circuit += measurez([0,1],6)
-        circuit += measurez([3,4],6)
-
-        
-
-
-        circuit += measurex([1],6)
-        circuit += measurex([1],6)
-        circuit.append("DETECTOR", [stim.target_rec(-1), stim.target_rec(-2)])
-        circuit += measurex([4],6)
-        circuit += measurex([4],6)
-        circuit.append("DETECTOR", [stim.target_rec(-1), stim.target_rec(-2)])
-
-        circuit += Circuit('''H 0 2 3 5''')
-
-        circuit += measurez([1,2],6)
-        circuit += measurez([4,5],6)
-
-        circuit += measurex([2,5],6)
-        circuit += measurex([2,5],6)
-        circuit.append("DETECTOR", [stim.target_rec(-1), stim.target_rec(-2)])
-
-
-
-        circuit += measurez([0,2],6)
-        circuit += measurez([3,5],6)
-
-        circuit += measurex([0],6)
-        circuit += measurex([0],6)
-        circuit.append("DETECTOR", [stim.target_rec(-1), stim.target_rec(-2)])
-        circuit += measurex([3],6)
-        circuit += measurex([3],6)
-        circuit.append("DETECTOR", [stim.target_rec(-1), stim.target_rec(-2)])
-
-        circuit += Circuit('''H 1 2 4 5''')
-
-        circuit += Circuit('''M 0 1 2 3 4 5''')
-
-        # 3rd contained
-        circuit.append("DETECTOR", [stim.target_rec(-35-30), stim.target_rec(-36-30), stim.target_rec(-27-30), stim.target_rec(-29-30), stim.target_rec(-18-30), stim.target_rec(-20-30), stim.target_rec(-11-30), stim.target_rec(-12-30)])
+        #3rd contained
+        circuit.append("DETECTOR", [stim.target_rec(-9-30), stim.target_rec(-10-30), stim.target_rec(-1-30), stim.target_rec(-3-30), stim.target_rec(-22), stim.target_rec(-24), stim.target_rec(-15), stim.target_rec(-16)])
 
         #4th contained
-        circuit.append("DETECTOR", [stim.target_rec(-25-30), stim.target_rec(-26-30), stim.target_rec(-17-30), stim.target_rec(-19-30), stim.target_rec(-8-30), stim.target_rec(-10-30), stim.target_rec(-31), stim.target_rec(-32)])
-
-        #5th contained
-        circuit.append("DETECTOR", [stim.target_rec(-15-30), stim.target_rec(-16-30), stim.target_rec(-7-30), stim.target_rec(-9-30), stim.target_rec(-28), stim.target_rec(-30), stim.target_rec(-21), stim.target_rec(-22)])
-
-        #6th contained
-        circuit.append("DETECTOR", [stim.target_rec(-35), stim.target_rec(-36), stim.target_rec(-27), stim.target_rec(-29), stim.target_rec(-18), stim.target_rec(-20), stim.target_rec(-11), stim.target_rec(-12)])
+        circuit.append("DETECTOR", [stim.target_rec(-29), stim.target_rec(-30), stim.target_rec(-21), stim.target_rec(-23), stim.target_rec(-12), stim.target_rec(-14), stim.target_rec(-5), stim.target_rec(-6)])
         
         if l > 0:
-            # first not contained = 7th not cont.
-            circuit.append("DETECTOR", [stim.target_rec(-31-30), stim.target_rec(-32-30), stim.target_rec(-8-30-36), stim.target_rec(-10-30-36), stim.target_rec(-17-30-36), stim.target_rec(-19-30-36), stim.target_rec(-25-30-36), stim.target_rec(-26-30-36)])
-        
+            # overlap detectors
+            circuit.append("DETECTOR", [stim.target_rec(-19-30-30), stim.target_rec(-20-30-30), stim.target_rec(-11-30-30), stim.target_rec(-13-30-30), stim.target_rec(-2-30-30), stim.target_rec(-4-30-30),  stim.target_rec(-25-30), stim.target_rec(-26-30)])
+            circuit.append("DETECTOR", [stim.target_rec(-9-30-30), stim.target_rec(-10-30-30), stim.target_rec(-1-30-30), stim.target_rec(-3-30-30), stim.target_rec(-22-30), stim.target_rec(-24-30), stim.target_rec(-15-30), stim.target_rec(-16-30)])
+
         if l == 0:
-            # first not contained
-            circuit.append("DETECTOR", [stim.target_rec(-31-30), stim.target_rec(-32-30)])
-        
-        if l == L-1:
-            #7th not cont.
-            circuit.append("DETECTOR", [stim.target_rec(-25), stim.target_rec(-26), stim.target_rec(-17), stim.target_rec(-19), stim.target_rec(-8), stim.target_rec(-10), stim.target_rec(-1), stim.target_rec(-2), stim.target_rec(-4), stim.target_rec(-5)])
-        
-
-
-
-        
+            # initial cut off
+            circuit.append("DETECTOR", [stim.target_rec(-25-30), stim.target_rec(-26-30)])
        
-        if l == L-1:
-            # Observable in last step
+
+        # Observable in intermediate steps 
+        if l < L-1:
             circuit += Circuit(f'''   
-                    OBSERVABLE_INCLUDE(0) rec[-66] rec[-62] rec[-59] rec[-50] rec[-46] rec[-42] rec[-39] rec[-30] rec[-26] rec[-22] rec[-19] rec[-10] rec[-4] rec[-5]
+                    OBSERVABLE_INCLUDE(0) rec[-60] rec[-56] rec[-53] rec[-44] rec[-40] rec[-36] rec[-33] rec[-24] rec[-20] rec[-16] rec[-13] rec[-4]
             ''')
-        else:
-            # Observable in intermediate steps
-            circuit += Circuit(f'''   
-                    OBSERVABLE_INCLUDE(0) rec[-66] rec[-62] rec[-59] rec[-50] rec[-46] rec[-42] rec[-39] rec[-30] rec[-26] rec[-22] rec[-19] rec[-10]
-            ''')
-        # print(repr(circuit))
+    
+    circuit += Circuit('''M 0 1 2 3 4 5''')
+    # final cut off
+    circuit.append("DETECTOR", [stim.target_rec(-26), stim.target_rec(-25), stim.target_rec(-19), stim.target_rec(-17), stim.target_rec(-8), stim.target_rec(-10), stim.target_rec(-1), stim.target_rec(-2), stim.target_rec(-4), stim.target_rec(-5)])
+
+    # final observable
+    circuit += Circuit(f'''   
+            OBSERVABLE_INCLUDE(0) rec[-66] rec[-62] rec[-59] rec[-50] rec[-46] rec[-42] rec[-39] rec[-30] rec[-26] rec[-22] rec[-19] rec[-10] rec[-4] rec[-5]
+    ''')
+
     return circuit
 
 def addnoise(circuit, faulty_gates, single_qubit_noise = 0, multi_qubit_noise = 0):
@@ -393,11 +345,12 @@ def detector_finder(circuit):
 
 
 def main():
-    
-    # code = periodic422(3)
-    # noisy = addnoise(code,{"H","M","CZ","CX","R"},0.3,0.3)
+    # log_err_counter([floq1,floq2,floq3,dpfl1,dpfl2,dpfl3], np.logspace(-4,-.7,10), np.logspace(-3,-.7,10), 10000, ['lime','aqua','olive','r','b','g'], ['nat 1','nat 2','nat 3', 'dp Floq 1','dp Floq 2','dp Floq 3'])
+
+    # code = nafloquet422(3)
+    # # noisy = addnoise(code,{"H","M","CZ","CX","R"},0.3,0.3)
     # dem = code.detector_error_model(decompose_errors=True)
-    # # print(dem)
+    # print(dem)
     # log_err_counter([code], np.logspace(-4,-.7,10), np.logspace(-3,-.7,10), 10000, ['lime','aqua','olive','r','b','g'], ['nat 1'])
     
 if __name__ == "__main__":
