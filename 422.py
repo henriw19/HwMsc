@@ -4,7 +4,7 @@ import numpy as np
 from matplotlib import pyplot as plt 
 import pymatching
 
-def vanilla422():
+def single422():
     # Encoding 
     circuit = Circuit('''
     H 3
@@ -277,7 +277,7 @@ def dpfloquet422(L):
 
     return circuit
 
-def addnoise(circuit, faulty_gates, single_qubit_noise = 0, multi_qubit_noise = 0):
+def addnoise(circuit, faulty_gates = {"H","M","CZ","CX","R"}, single_qubit_noise = 0, multi_qubit_noise = 0):
     noisy_circuit = stim.Circuit()
     for operation in circuit:
         operation = str(operation).split(' ')
@@ -324,9 +324,10 @@ def log_err_counter(circuits, single_qubit_noise, multi_qubit_noise, num_shots, 
     plt.loglog()
     plt.xlabel("physical error rate")
     plt.ylabel("logical error rate per shot")
+    plt.title("Comparison of [[4,2,2]] codes with equal distance")
     plt.legend()
-    plt.show()
-    # plt.savefig('422comparison')
+    # plt.show()
+    plt.savefig('422comparison')
 
 def detector_finder(circuit):
     sampler = circuit.compile_detector_sampler() 
@@ -345,11 +346,25 @@ def detector_finder(circuit):
 
 
 def main():
-    # log_err_counter([floq1,floq2,floq3,dpfl1,dpfl2,dpfl3], np.logspace(-4,-.7,10), np.logspace(-3,-.7,10), 10000, ['lime','aqua','olive','r','b','g'], ['nat 1','nat 2','nat 3', 'dp Floq 1','dp Floq 2','dp Floq 3'])
+    van1 = periodic422(2)
+    van2 = periodic422(4)
+    van3 = periodic422(6)
 
-    # code = nafloquet422(3)
-    # # noisy = addnoise(code,{"H","M","CZ","CX","R"},0.3,0.3)
-    # dem = code.detector_error_model(decompose_errors=True)
+    floq1 = nafloquet422(1)
+    floq2 = nafloquet422(2)
+    floq3 = nafloquet422(3)
+
+    dpfl1 = dpfloquet422(1)
+    dpfl2 = dpfloquet422(2)
+    dpfl3 = dpfloquet422(3)
+
+    log_err_counter([van1, van2, van3, floq1, floq2, floq3, dpfl1, dpfl2, dpfl3], np.logspace(-4,-.7,10), np.logspace(-3,-.7,10), 100000, ['r','r','r','b','b','b','g','g','g'], ['vanilla 1','vanilla 2','vanilla 3', 'naive Floq 1','naive Floq 2','naive Floq 3', 'DP Floq 1','DP Floq 2','DP Floq 3'])
+    
+    # log_err_counter([floq1,floq2,floq3,dpfl1,dpfl2,dpfl3], np.logspace(-4,-.7,10), np.logspace(-3,-.7,10), 10000, ['lime','aqua','olive','r','b','g'], ['nai 1','nai 2','nai 3', 'dp Floq 1','dp Floq 2','dp Floq 3'])
+
+    # code = nafloquet422(1)
+    # noisy = addnoise(code,{"H","M","CZ","CX","R"},0.3,0.3)
+    # dem = noisy.detector_error_model(decompose_errors=True)
     # print(dem)
     # log_err_counter([code], np.logspace(-4,-.7,10), np.logspace(-3,-.7,10), 10000, ['lime','aqua','olive','r','b','g'], ['nat 1'])
     
