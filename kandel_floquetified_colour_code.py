@@ -38,20 +38,6 @@ class NaiveFloquetifiedColourCode(Code):
             self.get_check_schedule(),
             self.get_detector_schedule())
 
-        # # Determine all measurements at time 0
-        # raw_measurements_0 = [
-        #     measurement
-        #     for half_tile_measurements in [
-        #         self._half_tile_checks_round_0((half_tile_x, half_tile_y))
-        #         for half_tile_y in range(2 * tiles_height)
-        #         for half_tile_x in range(tiles_width)]
-        #     for measurement in half_tile_measurements]
-        # measurements_0 = [
-        #     self.pauli_string_from_coords(measurement)
-        #     for measurement in raw_measurements_0]
-        # self._raw_measurements = {0: raw_measurements_0}
-        # self._measurements = {0: measurements_0}
-
     @staticmethod
     def to_wonky_coords(straight_coords: Tuple[int, int]):
         # Convert from 'straight' coordinates to 'wonky' coordinates
