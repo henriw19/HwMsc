@@ -1,0 +1,3 @@
+git+https://github.com/OzYossarian/Kandel.git@dev
+stim
+numpy
