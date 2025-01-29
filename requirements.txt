@@ -1,3 +1,3 @@
-git+https://github.com/OzYossarian/Kandel.git@dev
+git+https://github.com/OzYossarian/Kandel.git@removing_detectors_drum_restriction
 stim
 numpy
