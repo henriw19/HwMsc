@@ -7,14 +7,21 @@ from main.building_blocks.detectors.Detector import Detector
 from main.building_blocks.pauli import Pauli
 from main.building_blocks.pauli.PauliLetter import PauliLetter
 from main.codes.Code import Code
+from main.compiling.compilers.AncillaPerCheckCompiler import AncillaPerCheckCompiler
+from main.compiling.compilers.Compiler import Compiler
+from main.compiling.compilers.NativePauliProductMeasurementsCompiler import NativePauliProductMeasurementsCompiler
+from main.compiling.noise.models.NoNoise import NoNoise
+from main.compiling.syndrome_extraction.extractors.NativePauliProductMeasurementsExtractor import \
+    NativePauliProductMeasurementsExtractor
 from main.printing.Printer2D import Printer2D
+from main.utils.enums import State
 
-from utils import flatten, flatten_dicts
+from utils import flatten_dicts
 
 
 class NaiveFloquetifiedColourCode(Code):
     def __init__(self, tiles_width: int, tiles_height: int):
-        if tiles_width <= 0 or tiles_width % 3 == 0:
+        if tiles_width <= 0 or tiles_width % 3 != 0:
             raise ValueError(
                 "Width in terms of tiles must be a positive multiple of 3. " +
                 f"Instead, got {tiles_width}")
@@ -214,9 +221,19 @@ class NaiveFloquetifiedColourCode(Code):
         detector = Detector(detector_checks, round, shifted_anchor)
         return detector
 
-
-
-code = NaiveFloquetifiedColourCode(6, 2)
-printer = Printer2D()
-printer.print_code(code, 'naive_floquetified_colour_code', )
-
+code = NaiveFloquetifiedColourCode(3, 1)
+noise_model = NoNoise()
+syndrome_extractor = NativePauliProductMeasurementsExtractor()
+compiler = NativePauliProductMeasurementsCompiler(noise_model, syndrome_extractor)
+initial_states = {
+    qubit: State.Zero
+    for qubit in code.data_qubits.values()}
+final_measurements = [
+    Pauli(qubit, PauliLetter('Z'))
+    for qubit in code.data_qubits.values()]
+circuit = compiler.compile_to_stim(
+    code,
+    total_rounds=13,
+    initial_states=initial_states,
+    final_measurements=final_measurements)
+print(circuit)
