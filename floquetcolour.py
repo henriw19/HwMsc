@@ -114,7 +114,7 @@ def floquetcolour(L_x, L_y, L_t,g):
             for pos in qubit_positions:
                 circuit += measurez(((pos[0] + x * 13) % (L_x * 13), (pos[1] + y * 26) % (L_y * 26)),a,x,y,1,p)
                 p -= 1
-    
+
     return circuit,measurements, final_measurements
 
 
@@ -227,9 +227,15 @@ def adddetectors(circuit, measurements,final_measurements, L_x, L_y, L_t):
                                 number, coords, _ = measurements                      
                                 if isinstance(coords[0], tuple):
                                     if anchor in coords:  # Check if the target_tuple exists inside
+                                        if check:
+                                            print(key,tuple_list,coords)
+                                            pass
                                         result.add(number)       
                                 else:
                                     if anchor == coords:  # Direct comparison
+                                        if check:
+                                            print(key,tuple_list,coords)
+                                            pass
                                         result.add(number)
                     else:
                         for tup in tuple_list:
@@ -241,9 +247,15 @@ def adddetectors(circuit, measurements,final_measurements, L_x, L_y, L_t):
                                 number, coords, _ = measurements                      
                                 if isinstance(coords[0], tuple):
                                     if anchor in coords:  # Check if the target_tuple exists inside
+                                        if check:
+                                            print(key,tuple_list,coords)
+                                            pass
                                         result.add(number)       
                                 else:
                                     if anchor == coords:  # Direct comparison
+                                        if check:
+                                            print(key,tuple_list,coords)
+                                            pass
                                         result.add(number)
         return result
     
@@ -284,8 +296,8 @@ def adddetectors(circuit, measurements,final_measurements, L_x, L_y, L_t):
                 if t>= L_t -1:
                     cutoffdetectors[x][y][a-6][L_t if t == L_t-1 else t].add(((((0  + dx + dtx) % Dx, (3 + dy + dty) % Dy),((4 + dx + dtx) % Dx, (2 + dy + dty) % Dy)),
                                     (((-10 + dx + dtx) % Dx, (-1 + dy + dty) % Dy), ((-6 + dx + dtx) % Dx, (-2 + dy + dty) % Dy))))
-                    
-    # fully contained detectors:
+
+    # fully contained & bottom cutoff detectors:
     for t in range(L_t-1 + 7,0,-1): 
         for y in range(L_y):
             for x in range(L_x):
@@ -324,7 +336,6 @@ def adddetectors(circuit, measurements,final_measurements, L_x, L_y, L_t):
                                                     (((-43 + dx + dtx) % Dx, (-48 + dy + dty) % Dy),((-42 + dx + dtx) % Dx, (-45 + dy + dty) % Dy)),
                                                     (((-39 + dx + dtx) % Dx, (-49 + dy + dty) % Dy),((-35 + dx + dtx) % Dx, (-50 + dy + dty) % Dy))))
     
-
     i = 0
     m = []
     for xdet in detectors: #find measurements for full det
@@ -335,7 +346,7 @@ def adddetectors(circuit, measurements,final_measurements, L_x, L_y, L_t):
                 m.append(p)
 
     m2 = []
-    for x, xdet in enumerate(cutoffdetectors): # find meas. for cutoff det
+    for x, xdet in enumerate([[cutoffdetectors[1][0]]]): # find meas. for cutoff det
         for y, ydet in enumerate(xdet):
             for i, det in enumerate(ydet):
                 p2 = find_corresponding_meas(det, sliced_measurements)
@@ -344,57 +355,72 @@ def adddetectors(circuit, measurements,final_measurements, L_x, L_y, L_t):
                     for uu in u:
                         value = None  
                         for d in final_measurements[(x, y)]:
+                            
                             if uu in d:
                                 value = d[uu]
                                 break 
                         if value is not None:
+                            # print(uu,d)
                             p2.add(value)  
                 if len(p2) > 0:
                     m2.append(p2)
+                    
        
     for i,d in enumerate(m): 
         d = list(d)
         circuit.append("DETECTOR", [stim.target_rec(d[l] - 26 * L_x * L_y) for l in range(len(d))])
+    print(cutoffdetectors[1][0][5])  
 
 
-
-
-
-    # OBSERVABLE not working:
+    # OBSERVABLE working:
     observable = {key: set() for key in range(L_t+10)} 
 
     Dx = 13 * L_x
     Dy = 26 * L_y
-    for t in range(0,L_t):
+    for t in range(0 ,L_t):
         for y in range(L_y):
             
-            # if t % 2 == 0: #even pattern
-            #     observable[t].add((((((9 + (-14) * (t//2)) % Dx),((4 + 26 * y + (-16) * (t//2)) % Dy)),(((10 + (-14) * (t//2)) % Dx), ((7 + 26 * y + (-16) * (t//2)) % Dy))),
-            #                     (((14 + (-14) * (t//2)) % Dx),((19 + 26 * y + (-16) * (t//2)) % Dy))))
+            if t % 2 == 0: #even pattern
+                observable[t].add((((((9 + (-1) * (t//2)) % Dx),((4 + 26 * y + (-16) * (t//2)) % Dy)),(((10 + (-1) * (t//2)) % Dx), ((7 + 26 * y + (-16) * (t//2)) % Dy))),
+                                (((14 + (-1) * (t//2)) % Dx),((19 + 26 * y + (-16) * (t//2)) % Dy))
+                                ))
                 
-            # if t % 2 == 1: #uneven pattern
-            #     observable[t].add((((((-2  + (-14) * ((t//2))) % Dx),((-3 + 26 * y + (-16) * (t//2)) % Dy)),(((-1 + (-14) * (t//2)) % Dx), ((0 + 26 * y + (-16) * (t//2)) % Dy))),
-            #                        (((-6 + (-14) * ((t//2))) % Dx),((11 + 26 * y + (-16) * (t//2)) % Dy))))         
+            if t % 2  == 1: #uneven pattern
+                observable[t].add((((((12  + (-1) * (t//2)) % Dx),((0 + 26 * y + (-16) * (t//2)) % Dy)),(((11 + (-1) * (t//2)) % Dx), ((-3 + 26 * y + (-16) * (t//2)) % Dy))),
+                                   (((7 + (-1) * (t//2)) % Dx),((11 + 26 * y + (-16) * (t//2)) % Dy))
+                                   ))   
             
-            # if t == L_t - 1 and t % 2 == 1: #final measurements uneven
-            #     observable[L_t].add(((((-4+7 + (-7) * t) % Dx),((-9+8 + 26 * y + (-8) * t) % Dy)) ,
-            #                          (((-3+7 + (-7) * t) % Dx),((-6+8 + 26 * y + (-8) * t) % Dy)) ,
-            #                          (((-2+7 + (-7) * t) % Dx),((-3+8 + 26 * y + (-8) * t) % Dy)),
-            #                          (((-5+7 + (-7) * t) % Dx),(( 1+8 + 26 * y + (-8) * t) % Dy))
-            #                             ))
-            
-            # elif t == L_t - 1 and t % 2 == 0: #final measurements even
-            #     observable[L_t].add((
-            #         (((13 + (-7) * t) % Dx),((3  + 26 * y + (-8) * t) % Dy)) ,
-            #                          (((9  + (-7) * t) % Dx),((4  + 26 * y + (-8) * t) % Dy)) ,
-            #                          (((11 + (-7) * t) % Dx),((10 + 26 * y + (-8) * t) % Dy)),
-            #                          (((12 + (-7) * t) % Dx),((13 + 26 * y + (-8) * t) % Dy)),
-            #                         (((12 + (-7) * t) % Dx),((13 + 26 * y + (-8) * t) % Dy))
-                                   
-            #                             ))
-            pass
+            if t == L_t - 1 and t % 2 == 0: #final measurements if even
+                observable[L_t].add((
+                                     (((12 + (-1) * (t//2)) % Dx), ((13 + 26 * y + (-16) * (t//2)) % Dy)),
+                                     (((11 + (-1) * (t//2)) % Dx), ((10 + 26 * y + (-16) * (t//2)) % Dy)) ,
+                                     (((9  + (-1) * (t//2)) % Dx), ((4  + 26 * y + (-16) * (t//2)) % Dy)),
+                                     (((13 + (-1) * (t//2)) % Dx), ((3  + 26 * y + (-16) * (t//2)) % Dy)),
 
-    m = find_corresponding_meas(observable, sliced_measurements,True)
+                                     (((10 + (-1) * (t//2)) % Dx), ((20 + 26 * y + (-16) * (t//2)) % Dy)),
+                                     (((9  + (-1) * (t//2)) % Dx), ((17 + 26 * y + (-16) * (t//2)) % Dy)),
+                                     (((12 + (-1) * (t//2)) % Dx), ((0  + 26 * y + (-16) * (t//2)) % Dy)),
+                                     (((8  + (-1) * (t//2)) % Dx), ((1  + 26 * y + (-16) * (t//2)) % Dy)),
+
+                                        )) 
+                
+            if t == L_t - 1 and t % 2 == 1: #final measurements if uneven
+                observable[L_t].add((
+                                     (((10 + (-1) * (t//2)) % Dx), ((20 + 26 * y + (-16) * (t//2)) % Dy)) ,
+                                     (((9  + (-1) * (t//2)) % Dx), ((17 + 26 * y + (-16) * (t//2)) % Dy)) ,
+                                     (((8  + (-1) * (t//2)) % Dx), ((1  + 26 * y + (-16) * (t//2)) % Dy)),
+                                     (((11 + (-1) * (t//2)) % Dx), ((-3 + 26 * y + (-16) * (t//2)) % Dy)),
+
+                                     (((7 + (-1) * (t//2)) % Dx), ((11 + 26 * y + (-16) * (t//2)) % Dy)),
+
+                                     (((12 + (-1) * (t//2)) % Dx), ((13 + 26 * y + (-16) * (t//2)) % Dy)),
+                                     (((11 + (-1) * (t//2)) % Dx),((10 + 26 * y + (-16) * (t//2)) % Dy)),
+                                     (((9  + (-1) * (t//2)) % Dx), ((4  + 26 * y + (-16) * (t//2)) % Dy)),
+                                     (((13 + (-1) * (t//2)) % Dx),((3  + 26 * y + (-16) * (t//2)) % Dy))
+                                        ))               
+            
+
+    m = find_corresponding_meas(observable, sliced_measurements,False)
     cut_off_obs = []
 
     for tuple_group in observable[L_t]:
@@ -402,28 +428,24 @@ def adddetectors(circuit, measurements,final_measurements, L_x, L_y, L_t):
             for key, list_of_dicts in final_measurements.items():
                 for sub_dict in list_of_dicts:
                     if target_tuple in sub_dict:
-                        print(target_tuple,sub_dict)
                         cut_off_obs.append(sub_dict[target_tuple])
-  
 
     m = list(m)
     m = [i - 26 * L_x * L_y for i in m]
     m += cut_off_obs
     circuit_string = f"""OBSERVABLE_INCLUDE(0) {" ".join(f"rec[{_}]" for _ in m)}"""
     circuit += Circuit(circuit_string)
-
     return circuit
 
 def main():
-    L_x = 2      # number of horizontal "tiles"
-    L_y = 1      # number of vertical "tiles"
-    L_t = 14     # number of timesteps: (multiples of 13) + 1
+    L_x = 6      # number of horizontal "tiles"
+    L_y = 5      # number of vertical "tiles"
+    L_t = 14      # number of timesteps: (multiples of 13) + 1
 
     circuit, measurements, final_measurements = floquetcolour(L_x,L_y,L_t,0)
     circuit = adddetectors(circuit,measurements,final_measurements, L_x,L_y,L_t)
 
-    dem = circuit.detector_error_model(decompose_errors=True)
-    print(dem) 
+    print(circuit.detector_error_model(decompose_errors=True))
 
 if __name__ == "__main__":
     main()
