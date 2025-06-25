@@ -1,1 +1,0 @@
-git+https://github.com/OzYossarian/Kandel.git@removing_detectors_drum_restriction
