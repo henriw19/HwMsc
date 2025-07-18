@@ -1,0 +1,10 @@
+^C:\USERS\HENRI\MSC\BUILD\_DEPS\PYMATCHING-SUBBUILD\CMAKEFILES\E84098B0771B15755DD01D7FB9594B59\GENERATE.STAMP.RULE
+setlocal
+D:\Anwendungen\vs\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe -SC:/Users/henri/Msc/build/_deps/pymatching-subbuild -BC:/Users/henri/Msc/build/_deps/pymatching-subbuild --check-stamp-list CMakeFiles/generate.stamp.list --vs-solution-file C:/Users/henri/Msc/build/_deps/pymatching-subbuild/pymatching-populate.sln
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd

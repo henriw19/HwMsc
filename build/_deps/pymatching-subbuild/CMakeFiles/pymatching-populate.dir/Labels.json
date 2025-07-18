@@ -1,0 +1,46 @@
+{
+	"sources" : 
+	[
+		{
+			"file" : "C:/Users/henri/Msc/build/_deps/pymatching-subbuild/CMakeFiles/pymatching-populate"
+		},
+		{
+			"file" : "C:/Users/henri/Msc/build/_deps/pymatching-subbuild/CMakeFiles/e84098b0771b15755dd01d7fb9594b59/pymatching-populate.rule"
+		},
+		{
+			"file" : "C:/Users/henri/Msc/build/_deps/pymatching-subbuild/CMakeFiles/b40cd50e8e8995c3f363ea5550fa392d/pymatching-populate-complete.rule"
+		},
+		{
+			"file" : "C:/Users/henri/Msc/build/_deps/pymatching-subbuild/CMakeFiles/22dd68260e31c5c4d711452a9f23b6f4/pymatching-populate-build.rule"
+		},
+		{
+			"file" : "C:/Users/henri/Msc/build/_deps/pymatching-subbuild/CMakeFiles/22dd68260e31c5c4d711452a9f23b6f4/pymatching-populate-configure.rule"
+		},
+		{
+			"file" : "C:/Users/henri/Msc/build/_deps/pymatching-subbuild/CMakeFiles/22dd68260e31c5c4d711452a9f23b6f4/pymatching-populate-download.rule"
+		},
+		{
+			"file" : "C:/Users/henri/Msc/build/_deps/pymatching-subbuild/CMakeFiles/22dd68260e31c5c4d711452a9f23b6f4/pymatching-populate-install.rule"
+		},
+		{
+			"file" : "C:/Users/henri/Msc/build/_deps/pymatching-subbuild/CMakeFiles/22dd68260e31c5c4d711452a9f23b6f4/pymatching-populate-mkdir.rule"
+		},
+		{
+			"file" : "C:/Users/henri/Msc/build/_deps/pymatching-subbuild/CMakeFiles/22dd68260e31c5c4d711452a9f23b6f4/pymatching-populate-patch.rule"
+		},
+		{
+			"file" : "C:/Users/henri/Msc/build/_deps/pymatching-subbuild/CMakeFiles/22dd68260e31c5c4d711452a9f23b6f4/pymatching-populate-test.rule"
+		},
+		{
+			"file" : "C:/Users/henri/Msc/build/_deps/pymatching-subbuild/CMakeFiles/22dd68260e31c5c4d711452a9f23b6f4/pymatching-populate-update.rule"
+		}
+	],
+	"target" : 
+	{
+		"labels" : 
+		[
+			"pymatching-populate"
+		],
+		"name" : "pymatching-populate"
+	}
+}

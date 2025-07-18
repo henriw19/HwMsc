@@ -1,0 +1,47 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "CMakePredefinedTargets", "CMakePredefinedTargets", "{46EFE9EE-47AB-335F-B21B-6646711A3AEE}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ExternalProjectTargets", "ExternalProjectTargets", "{D7226267-AE68-34C1-9B6F-14D87171B1B1}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "pymatching-populate", "ExternalProjectTargets\pymatching-populate", "{0287BF6E-EE3E-3ABB-9F4C-A27202900CD9}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ALL_BUILD", "ALL_BUILD.vcxproj", "{1F493249-D3E2-308E-88D5-E25A3A20167E}"
+	ProjectSection(ProjectDependencies) = postProject
+		{763858E9-4C28-3A6F-9B89-9C7752CA74A5} = {763858E9-4C28-3A6F-9B89-9C7752CA74A5}
+		{A082987E-E765-305D-BB26-621A63F1B29C} = {A082987E-E765-305D-BB26-621A63F1B29C}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ZERO_CHECK", "ZERO_CHECK.vcxproj", "{763858E9-4C28-3A6F-9B89-9C7752CA74A5}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "pymatching-populate", "pymatching-populate.vcxproj", "{A082987E-E765-305D-BB26-621A63F1B29C}"
+	ProjectSection(ProjectDependencies) = postProject
+		{763858E9-4C28-3A6F-9B89-9C7752CA74A5} = {763858E9-4C28-3A6F-9B89-9C7752CA74A5}
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|win32 = Debug|win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{1F493249-D3E2-308E-88D5-E25A3A20167E}.Debug|win32.ActiveCfg = Debug|win32
+		{763858E9-4C28-3A6F-9B89-9C7752CA74A5}.Debug|win32.ActiveCfg = Debug|win32
+		{763858E9-4C28-3A6F-9B89-9C7752CA74A5}.Debug|win32.Build.0 = Debug|win32
+		{A082987E-E765-305D-BB26-621A63F1B29C}.Debug|win32.ActiveCfg = Debug|win32
+		{A082987E-E765-305D-BB26-621A63F1B29C}.Debug|win32.Build.0 = Debug|win32
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{1F493249-D3E2-308E-88D5-E25A3A20167E} = {46EFE9EE-47AB-335F-B21B-6646711A3AEE}
+		{763858E9-4C28-3A6F-9B89-9C7752CA74A5} = {46EFE9EE-47AB-335F-B21B-6646711A3AEE}
+		{0287BF6E-EE3E-3ABB-9F4C-A27202900CD9} = {D7226267-AE68-34C1-9B6F-14D87171B1B1}
+		{A082987E-E765-305D-BB26-621A63F1B29C} = {0287BF6E-EE3E-3ABB-9F4C-A27202900CD9}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {B2C1CF93-46C8-3630-9735-92D594C59BEE}
+	EndGlobalSection
+	GlobalSection(ExtensibilityAddIns) = postSolution
+	EndGlobalSection
+EndGlobal

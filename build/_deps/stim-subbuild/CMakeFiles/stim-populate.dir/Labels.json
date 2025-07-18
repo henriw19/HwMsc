@@ -1,0 +1,46 @@
+{
+	"sources" : 
+	[
+		{
+			"file" : "C:/Users/henri/Msc/build/_deps/stim-subbuild/CMakeFiles/stim-populate"
+		},
+		{
+			"file" : "C:/Users/henri/Msc/build/_deps/stim-subbuild/CMakeFiles/86ec5944551860499db4e90d9ae7e747/stim-populate.rule"
+		},
+		{
+			"file" : "C:/Users/henri/Msc/build/_deps/stim-subbuild/CMakeFiles/baa6cd60a47de4a31efe02d38fbc54f8/stim-populate-complete.rule"
+		},
+		{
+			"file" : "C:/Users/henri/Msc/build/_deps/stim-subbuild/CMakeFiles/e9d4ca0975d1d4c2e29887b84f21e79c/stim-populate-build.rule"
+		},
+		{
+			"file" : "C:/Users/henri/Msc/build/_deps/stim-subbuild/CMakeFiles/e9d4ca0975d1d4c2e29887b84f21e79c/stim-populate-configure.rule"
+		},
+		{
+			"file" : "C:/Users/henri/Msc/build/_deps/stim-subbuild/CMakeFiles/e9d4ca0975d1d4c2e29887b84f21e79c/stim-populate-download.rule"
+		},
+		{
+			"file" : "C:/Users/henri/Msc/build/_deps/stim-subbuild/CMakeFiles/e9d4ca0975d1d4c2e29887b84f21e79c/stim-populate-install.rule"
+		},
+		{
+			"file" : "C:/Users/henri/Msc/build/_deps/stim-subbuild/CMakeFiles/e9d4ca0975d1d4c2e29887b84f21e79c/stim-populate-mkdir.rule"
+		},
+		{
+			"file" : "C:/Users/henri/Msc/build/_deps/stim-subbuild/CMakeFiles/e9d4ca0975d1d4c2e29887b84f21e79c/stim-populate-patch.rule"
+		},
+		{
+			"file" : "C:/Users/henri/Msc/build/_deps/stim-subbuild/CMakeFiles/e9d4ca0975d1d4c2e29887b84f21e79c/stim-populate-test.rule"
+		},
+		{
+			"file" : "C:/Users/henri/Msc/build/_deps/stim-subbuild/CMakeFiles/e9d4ca0975d1d4c2e29887b84f21e79c/stim-populate-update.rule"
+		}
+	],
+	"target" : 
+	{
+		"labels" : 
+		[
+			"stim-populate"
+		],
+		"name" : "stim-populate"
+	}
+}

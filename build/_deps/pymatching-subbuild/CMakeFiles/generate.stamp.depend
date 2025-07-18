@@ -1,0 +1,20 @@
+# CMake generation dependency list for this directory.
+C:/Users/henri/Msc/build/_deps/pymatching-subbuild/CMakeFiles/3.30.5-msvc23/CMakeSystem.cmake
+C:/Users/henri/Msc/build/_deps/pymatching-subbuild/CMakeLists.txt
+C:/Users/henri/Msc/build/_deps/pymatching-subbuild/pymatching-populate-prefix/tmp/pymatching-populate-mkdirs.cmake
+D:/Anwendungen/vs/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.30/Modules/CMakeGenericSystem.cmake
+D:/Anwendungen/vs/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.30/Modules/CMakeInitializeConfigs.cmake
+D:/Anwendungen/vs/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.30/Modules/CMakeSystemSpecificInformation.cmake
+D:/Anwendungen/vs/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.30/Modules/CMakeSystemSpecificInitialize.cmake
+D:/Anwendungen/vs/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.30/Modules/ExternalProject.cmake
+D:/Anwendungen/vs/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.30/Modules/ExternalProject/PatchInfo.txt.in
+D:/Anwendungen/vs/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.30/Modules/ExternalProject/RepositoryInfo.txt.in
+D:/Anwendungen/vs/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.30/Modules/ExternalProject/UpdateInfo.txt.in
+D:/Anwendungen/vs/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.30/Modules/ExternalProject/cfgcmd.txt.in
+D:/Anwendungen/vs/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.30/Modules/ExternalProject/gitclone.cmake.in
+D:/Anwendungen/vs/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.30/Modules/ExternalProject/gitupdate.cmake.in
+D:/Anwendungen/vs/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.30/Modules/ExternalProject/mkdirs.cmake.in
+D:/Anwendungen/vs/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.30/Modules/ExternalProject/shared_internal_commands.cmake
+D:/Anwendungen/vs/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.30/Modules/Platform/Windows-Initialize.cmake
+D:/Anwendungen/vs/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.30/Modules/Platform/Windows.cmake
+D:/Anwendungen/vs/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.30/Modules/Platform/WindowsPaths.cmake

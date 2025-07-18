@@ -1,0 +1,44 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\henri\Msc\build\_deps\pymatching-subbuild\CMakeFiles\22dd68260e31c5c4d711452a9f23b6f4\pymatching-populate-mkdir.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\henri\Msc\build\_deps\pymatching-subbuild\CMakeFiles\22dd68260e31c5c4d711452a9f23b6f4\pymatching-populate-download.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\henri\Msc\build\_deps\pymatching-subbuild\CMakeFiles\22dd68260e31c5c4d711452a9f23b6f4\pymatching-populate-update.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\henri\Msc\build\_deps\pymatching-subbuild\CMakeFiles\22dd68260e31c5c4d711452a9f23b6f4\pymatching-populate-patch.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\henri\Msc\build\_deps\pymatching-subbuild\CMakeFiles\22dd68260e31c5c4d711452a9f23b6f4\pymatching-populate-configure.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\henri\Msc\build\_deps\pymatching-subbuild\CMakeFiles\22dd68260e31c5c4d711452a9f23b6f4\pymatching-populate-build.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\henri\Msc\build\_deps\pymatching-subbuild\CMakeFiles\22dd68260e31c5c4d711452a9f23b6f4\pymatching-populate-install.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\henri\Msc\build\_deps\pymatching-subbuild\CMakeFiles\22dd68260e31c5c4d711452a9f23b6f4\pymatching-populate-test.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\henri\Msc\build\_deps\pymatching-subbuild\CMakeFiles\b40cd50e8e8995c3f363ea5550fa392d\pymatching-populate-complete.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\henri\Msc\build\_deps\pymatching-subbuild\CMakeFiles\e84098b0771b15755dd01d7fb9594b59\pymatching-populate.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\henri\Msc\build\_deps\pymatching-subbuild\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="C:\Users\henri\Msc\build\_deps\pymatching-subbuild\CMakeFiles\pymatching-populate" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="CMake Rules">
+      <UniqueIdentifier>{E5CB6CC6-268D-3AB3-B996-F55A9F06EFDA}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

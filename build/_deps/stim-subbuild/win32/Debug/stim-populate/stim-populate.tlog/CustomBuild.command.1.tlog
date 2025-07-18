@@ -1,0 +1,150 @@
+^C:\USERS\HENRI\MSC\BUILD\_DEPS\STIM-SUBBUILD\CMAKEFILES\E9D4CA0975D1D4C2E29887B84F21E79C\STIM-POPULATE-MKDIR.RULE
+setlocal
+D:\Anwendungen\vs\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe -Dcfgdir=/Debug -P C:/Users/henri/Msc/build/_deps/stim-subbuild/stim-populate-prefix/tmp/stim-populate-mkdirs.cmake
+if %errorlevel% neq 0 goto :cmEnd
+D:\Anwendungen\vs\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe -E touch C:/Users/henri/Msc/build/_deps/stim-subbuild/stim-populate-prefix/src/stim-populate-stamp/Debug/stim-populate-mkdir
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\HENRI\MSC\BUILD\_DEPS\STIM-SUBBUILD\CMAKEFILES\E9D4CA0975D1D4C2E29887B84F21E79C\STIM-POPULATE-DOWNLOAD.RULE
+setlocal
+cd C:\Users\henri\Msc\build\_deps
+if %errorlevel% neq 0 goto :cmEnd
+C:
+if %errorlevel% neq 0 goto :cmEnd
+D:\Anwendungen\vs\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe -DCMAKE_MESSAGE_LOG_LEVEL=VERBOSE -P C:/Users/henri/Msc/build/_deps/stim-subbuild/stim-populate-prefix/tmp/stim-populate-gitclone.cmake
+if %errorlevel% neq 0 goto :cmEnd
+D:\Anwendungen\vs\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe -E touch C:/Users/henri/Msc/build/_deps/stim-subbuild/stim-populate-prefix/src/stim-populate-stamp/Debug/stim-populate-download
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\HENRI\MSC\BUILD\_DEPS\STIM-SUBBUILD\CMAKEFILES\E9D4CA0975D1D4C2E29887B84F21E79C\STIM-POPULATE-UPDATE.RULE
+setlocal
+cd C:\Users\henri\Msc\build\_deps\stim-src
+if %errorlevel% neq 0 goto :cmEnd
+C:
+if %errorlevel% neq 0 goto :cmEnd
+D:\Anwendungen\vs\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe -Dcan_fetch=YES -DCMAKE_MESSAGE_LOG_LEVEL=VERBOSE -P C:/Users/henri/Msc/build/_deps/stim-subbuild/stim-populate-prefix/tmp/stim-populate-gitupdate.cmake
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\HENRI\MSC\BUILD\_DEPS\STIM-SUBBUILD\CMAKEFILES\E9D4CA0975D1D4C2E29887B84F21E79C\STIM-POPULATE-PATCH.RULE
+setlocal
+D:\Anwendungen\vs\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe -E echo_append
+if %errorlevel% neq 0 goto :cmEnd
+D:\Anwendungen\vs\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe -E touch C:/Users/henri/Msc/build/_deps/stim-subbuild/stim-populate-prefix/src/stim-populate-stamp/Debug/stim-populate-patch
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\HENRI\MSC\BUILD\_DEPS\STIM-SUBBUILD\CMAKEFILES\E9D4CA0975D1D4C2E29887B84F21E79C\STIM-POPULATE-CONFIGURE.RULE
+setlocal
+cd C:\Users\henri\Msc\build\_deps\stim-build
+if %errorlevel% neq 0 goto :cmEnd
+C:
+if %errorlevel% neq 0 goto :cmEnd
+D:\Anwendungen\vs\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe -E echo_append
+if %errorlevel% neq 0 goto :cmEnd
+D:\Anwendungen\vs\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe -E touch C:/Users/henri/Msc/build/_deps/stim-subbuild/stim-populate-prefix/src/stim-populate-stamp/Debug/stim-populate-configure
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\HENRI\MSC\BUILD\_DEPS\STIM-SUBBUILD\CMAKEFILES\E9D4CA0975D1D4C2E29887B84F21E79C\STIM-POPULATE-BUILD.RULE
+setlocal
+cd C:\Users\henri\Msc\build\_deps\stim-build
+if %errorlevel% neq 0 goto :cmEnd
+C:
+if %errorlevel% neq 0 goto :cmEnd
+D:\Anwendungen\vs\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe -E echo_append
+if %errorlevel% neq 0 goto :cmEnd
+D:\Anwendungen\vs\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe -E touch C:/Users/henri/Msc/build/_deps/stim-subbuild/stim-populate-prefix/src/stim-populate-stamp/Debug/stim-populate-build
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\HENRI\MSC\BUILD\_DEPS\STIM-SUBBUILD\CMAKEFILES\E9D4CA0975D1D4C2E29887B84F21E79C\STIM-POPULATE-INSTALL.RULE
+setlocal
+cd C:\Users\henri\Msc\build\_deps\stim-build
+if %errorlevel% neq 0 goto :cmEnd
+C:
+if %errorlevel% neq 0 goto :cmEnd
+D:\Anwendungen\vs\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe -E echo_append
+if %errorlevel% neq 0 goto :cmEnd
+D:\Anwendungen\vs\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe -E touch C:/Users/henri/Msc/build/_deps/stim-subbuild/stim-populate-prefix/src/stim-populate-stamp/Debug/stim-populate-install
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\HENRI\MSC\BUILD\_DEPS\STIM-SUBBUILD\CMAKEFILES\E9D4CA0975D1D4C2E29887B84F21E79C\STIM-POPULATE-TEST.RULE
+setlocal
+cd C:\Users\henri\Msc\build\_deps\stim-build
+if %errorlevel% neq 0 goto :cmEnd
+C:
+if %errorlevel% neq 0 goto :cmEnd
+D:\Anwendungen\vs\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe -E echo_append
+if %errorlevel% neq 0 goto :cmEnd
+D:\Anwendungen\vs\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe -E touch C:/Users/henri/Msc/build/_deps/stim-subbuild/stim-populate-prefix/src/stim-populate-stamp/Debug/stim-populate-test
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\HENRI\MSC\BUILD\_DEPS\STIM-SUBBUILD\CMAKEFILES\BAA6CD60A47DE4A31EFE02D38FBC54F8\STIM-POPULATE-COMPLETE.RULE
+setlocal
+D:\Anwendungen\vs\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe -E make_directory C:/Users/henri/Msc/build/_deps/stim-subbuild/CMakeFiles/Debug
+if %errorlevel% neq 0 goto :cmEnd
+D:\Anwendungen\vs\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe -E touch C:/Users/henri/Msc/build/_deps/stim-subbuild/CMakeFiles/Debug/stim-populate-complete
+if %errorlevel% neq 0 goto :cmEnd
+D:\Anwendungen\vs\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe -E touch C:/Users/henri/Msc/build/_deps/stim-subbuild/stim-populate-prefix/src/stim-populate-stamp/Debug/stim-populate-done
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\HENRI\MSC\BUILD\_DEPS\STIM-SUBBUILD\CMAKEFILES\86EC5944551860499DB4E90D9AE7E747\STIM-POPULATE.RULE
+setlocal
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\HENRI\MSC\BUILD\_DEPS\STIM-SUBBUILD\CMAKELISTS.TXT
+setlocal
+D:\Anwendungen\vs\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe -SC:/Users/henri/Msc/build/_deps/stim-subbuild -BC:/Users/henri/Msc/build/_deps/stim-subbuild --check-stamp-file C:/Users/henri/Msc/build/_deps/stim-subbuild/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd

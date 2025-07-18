@@ -1,0 +1,10 @@
+^C:\USERS\HENRI\MSC\BUILD\_DEPS\STIM-SUBBUILD\CMAKEFILES\86EC5944551860499DB4E90D9AE7E747\GENERATE.STAMP.RULE
+setlocal
+D:\Anwendungen\vs\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe -SC:/Users/henri/Msc/build/_deps/stim-subbuild -BC:/Users/henri/Msc/build/_deps/stim-subbuild --check-stamp-list CMakeFiles/generate.stamp.list --vs-solution-file C:/Users/henri/Msc/build/_deps/stim-subbuild/stim-populate.sln
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd

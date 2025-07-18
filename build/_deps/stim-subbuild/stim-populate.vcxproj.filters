@@ -1,0 +1,44 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\henri\Msc\build\_deps\stim-subbuild\CMakeFiles\e9d4ca0975d1d4c2e29887b84f21e79c\stim-populate-mkdir.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\henri\Msc\build\_deps\stim-subbuild\CMakeFiles\e9d4ca0975d1d4c2e29887b84f21e79c\stim-populate-download.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\henri\Msc\build\_deps\stim-subbuild\CMakeFiles\e9d4ca0975d1d4c2e29887b84f21e79c\stim-populate-update.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\henri\Msc\build\_deps\stim-subbuild\CMakeFiles\e9d4ca0975d1d4c2e29887b84f21e79c\stim-populate-patch.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\henri\Msc\build\_deps\stim-subbuild\CMakeFiles\e9d4ca0975d1d4c2e29887b84f21e79c\stim-populate-configure.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\henri\Msc\build\_deps\stim-subbuild\CMakeFiles\e9d4ca0975d1d4c2e29887b84f21e79c\stim-populate-build.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\henri\Msc\build\_deps\stim-subbuild\CMakeFiles\e9d4ca0975d1d4c2e29887b84f21e79c\stim-populate-install.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\henri\Msc\build\_deps\stim-subbuild\CMakeFiles\e9d4ca0975d1d4c2e29887b84f21e79c\stim-populate-test.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\henri\Msc\build\_deps\stim-subbuild\CMakeFiles\baa6cd60a47de4a31efe02d38fbc54f8\stim-populate-complete.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\henri\Msc\build\_deps\stim-subbuild\CMakeFiles\86ec5944551860499db4e90d9ae7e747\stim-populate.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\henri\Msc\build\_deps\stim-subbuild\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="C:\Users\henri\Msc\build\_deps\stim-subbuild\CMakeFiles\stim-populate" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="CMake Rules">
+      <UniqueIdentifier>{5A7144FA-00B8-3883-B829-E674AAC6765B}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
