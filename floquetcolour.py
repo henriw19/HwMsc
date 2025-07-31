@@ -3,6 +3,9 @@ import chromobius
 from stim import Circuit
 import numpy as np
 from matplotlib import pyplot as plt 
+from ldpc.ckt_noise import detector_error_model_to_check_matrices
+from itertools import product
+from ldpc import BpOsdDecoder
 
 
 
@@ -812,17 +815,35 @@ def main():
     circuit = addnoise(circuit,{"H", "R", "M","CZ"},0.25,0.25) #(circuit, faulty gates, single qubit noise, multi qubit noise)
     dem = circuit.detector_error_model(decompose_errors=True,ignore_decomposition_failures=True)
 
+    # Decode with BP+OSD
+    DemMatrices = detector_error_model_to_check_matrices(dem, allow_undecomposed_hyperedges=True)
+    sampler = circuit.compile_detector_sampler()
+    samples,b= sampler.sample(shots=1, separate_observables=True)
+    altpcm = dem_to_parity_check_matrix(dem, include_observables=False)[:-20*L_x*L_y]
+    bp_osd = BpOsdDecoder(
+            altpcm.T,
+            error_rate = 0.,
+            bp_method = 'product_sum',
+            max_iter = 1,
+            schedule = 'serial',
+            osd_method = 'osd_0', #set to OSD_0 for fast solve
+            osd_order = 0
+        )
+    
+    decoding = bp_osd.decode(samples[0])
+    print("decoding worked?",np.array_equal(altpcm.T @ decoding %2, samples[0].astype(int)))
+
     # Decode with Chromobius.
-    shots = 1
-    dets, actual_obs_flips = circuit.compile_detector_sampler().sample(
-        shots=shots,
-        separate_observables=True,
-        bit_packed=True,
-    )
-    decoder = chromobius.compile_decoder_for_dem(circuit.detector_error_model())
-    predicted_obs_flips = decoder.predict_obs_flips_from_dets_bit_packed(dets)
-    # count logical errors
-    print(np.count_nonzero(np.any(predicted_obs_flips != actual_obs_flips, axis=1))/shots)   
+    # shots = 1
+    # dets, actual_obs_flips = circuit.compile_detector_sampler().sample(
+    #     shots=shots,
+    #     separate_observables=True,
+    #     bit_packed=True,
+    # )
+    # decoder = chromobius.compile_decoder_for_dem(circuit.detector_error_model())
+    # predicted_obs_flips = decoder.predict_obs_flips_from_dets_bit_packed(dets)
+    # # count logical errors
+    # print(np.count_nonzero(np.any(predicted_obs_flips != actual_obs_flips, axis=1))/shots)   
 
 if __name__ == "__main__":
     main()

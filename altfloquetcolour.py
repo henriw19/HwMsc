@@ -2,9 +2,10 @@ import pyzx as zx
 import matplotlib.pyplot as plt
 import stim
 from stim import Circuit
-from cle_zx.detection_webs import get_detection_webs, make_rg
+from cle_zx.detection_webs import make_rg, get_detection_webs
 import quizx
 import numpy as np
+import networkx as nx
 
 
 
@@ -254,7 +255,17 @@ class AltFloquetColour:
 
         g = self.zxGraph()
         g = make_rg(g)
-        pauliWebs = get_detection_webs(g)
+
+        # pauliWebs = get_detection_webs(g)
+        # c1 = Circuit()
+        # c1 = c1.from_graph(g)
+        N = g.to_matrix(preserve_scalar=True)
+        # N = nx.to_numpy_array(nx.Graph(g.edges())).astype(int)
+        print(N)
+        
+
+
+
         for i,web in enumerate(pauliWebs):
             vertices = sorted(web.vertices())
             anchor = list(vertices)[0]
@@ -271,8 +282,8 @@ class AltFloquetColour:
                 else:
                     redWebs.add(web)
 
-        print("found:",len(pauliWebs), len(greenWebs), len(redWebs))
-        print(greenWebs)
+        # print("found:",len(pauliWebs), len(greenWebs), len(redWebs))
+        # print(greenWebs)
 
                             
                     
@@ -364,13 +375,13 @@ class AltFloquetColour:
 
 
 
-mycol = AltFloquetColour(graph=None, Lx=2, Ly=2) #2x2: 216, 3x2: 324, 3x3:486
+mycol = AltFloquetColour(graph=None, Lx=2, Ly=2)
 # mycol.quizx()
 g = mycol.zxGraph()
 det = mycol.detectorFinder()
 # print(det)
 # circ = mycol.stimCircuit()
-fig = zx.draw(g, labels=True)
+fig = zx.draw(g, labels=False)
 # fig.savefig("zx_diagram.png", dpi=1000, bbox_inches='tight')
 # print(len(g.neighbors(55)))
 
