@@ -1,0 +1,10 @@
+git+https://github.com/OzYossarian/Kandel.git@allowing_custom_initial_and_final_detectors
+stim
+# chromobius  # Requires cmake - install cmake first: brew install cmake
+ldpc
+pyzx
+quizx
+
+numpy
+matplotlib
+networkx
