@@ -1,3 +1,4 @@
+from re import S
 from typing import Tuple, List, Dict
 
 import numpy as np
@@ -192,6 +193,17 @@ class NaiveFloquetifiedColourCode(Code):
             for round in range(13)]
         return detector_schedule
 
+    def _get_raw_detector(self):
+        return [
+            [(-3, 0), (0, -1), (2, -1)],
+            [(-3, -2), (1, 2)],
+            [(3, -2), (4, 2)],
+            [(4, -1)],
+            [(-4, 1)],
+            [(-4, -2), (-3, 2)],
+            [(-1, -2), (3, 2)],
+            [(-2, 1), (0, 1), (3, 0)]]
+
     def _realise_raw_detector(
             self,
             raw_detector: List[List[Tuple[int, int]]],
@@ -231,17 +243,18 @@ class NaiveFloquetifiedColourCode(Code):
         # then every ZZ or Z measurement is a detector.
         # Vice versa for initialisation in |+> with XX and X measurements.
         if initial_state == State.Zero:
-            half_tile_offset = np.array([0, 0])
+            half_tile_shift = np.array([0, 0])
         else:
-            half_tile_offset = self._half_tile_side_vector
+            half_tile_shift = self._half_tile_side_vector
         # Write down anchors of all the checks in one tile that form detectors in round 0.
         tile_check_anchors = [
-            tuple(half_tile_offset + (1, 0)), 
-            tuple(half_tile_offset + (-1, 2)),
-            tuple(half_tile_offset + (0, 5)),
-            tuple(half_tile_offset + (2, 5)),
-            tuple(half_tile_offset + (3, 8)),
-            tuple(half_tile_offset + (2, 14))]
+            tuple(half_tile_shift + (1, 0)), 
+            tuple(half_tile_shift + (-1, 2)),
+            tuple(half_tile_shift + (0, 5)),
+            tuple(half_tile_shift + (2, 5)),
+            tuple(half_tile_shift + (3, 8)),
+            tuple(half_tile_shift + (1, 10)),
+            tuple(half_tile_shift + (2, 14))]
         # Now turn this into check anchors that form detectors in round 0 across the whole code.
         tile_coordss = [
             (x, y)
@@ -274,8 +287,8 @@ class NaiveFloquetifiedColourCode(Code):
         half_tile_coordss = [
             (x, 2*y + y_offset)
             for x in range(self._tiles_width)
-            for y in range(self._tiles_height)
-        ]
+            for y in range(self._tiles_height)]
+
         initial_raw_detectors = self._get_initial_raw_detectors()
         for i, raw_detector in enumerate(initial_raw_detectors):
             # Round 0 already handled so rounds here are 1 more than the list index.
@@ -291,61 +304,262 @@ class NaiveFloquetifiedColourCode(Code):
         return initial_detector_schedule
         
     def _get_initial_raw_detectors(self):
-        # Detectors in the first three round follow an irregular pattern,
+        # Detectors in the first few rounds follow an irregular pattern,
         # due to initialisation of the qubits cutting up the detectors, effectively.
         # We've handled round 0 already, so start at round 1.
         round_1_raw_detector = [
             [(-3, 0), (0, -1), (2, -1)],
-            []
-        ]        
+            []]        
         round_2_raw_detector = [
             [(-3, 0), (0, -1), (2, -1)],
             [(-3, -2), (1, 2)],
-            [(3, -2)],
-        ]
-        # At this point, there are no more "irregular" detectors - 
-        # we just cut off the regular detector at the required round.
+            [(3, -2), (-2, 0)]]
+        
+        # Rounds 3 and 4 just use the regular detector but cut off at the required round.
+        round_3_raw_detector = self._get_raw_detector()[:3 + 1]
+        round_4_raw_detector = self._get_raw_detector()[:4 + 1]
+
+        # But annoyingly round 5 is irregular!  
+        round_5_raw_detector = self._get_raw_detector()[:5 + 1]
+        round_5_raw_detector[-1].append((2, 0))
+
+        # Round 6 is regular again.
+        round_6_raw_detector = self._get_raw_detector()[:6 + 1]
+
         # Important that we stop at round 6! 
         # The first "full" (not cut off) red detectors end at round 7.
         # So we want the usual detector schedule to take over at this point. 
-        remaining_rounds_raw_detectors = [
-            self._get_raw_detector()[:round + 1]
-            for round in range(3, 7)
-        ]
         return [
             round_1_raw_detector,
             round_2_raw_detector,
-            *remaining_rounds_raw_detectors
-        ]
+            round_3_raw_detector,
+            round_4_raw_detector,
+            round_5_raw_detector,
+            round_6_raw_detector]
 
-    def _get_raw_detector(self):
-        return [
-            [(-3, 0), (0, -1), (2, -1)],
-            [(-3, -2), (1, 2)],
-            [(3, -2), (4, 2)],
-            [(4, -1)],
-            [(-4, 1)],
-            [(-4, -2), (-3, 2)],
+    def get_final_detectors(
+            self, 
+            final_measurement_basis: PauliLetter,
+            final_checks: Dict[Qubit, Check],
+            total_rounds: int
+    ) -> List[List[Detector]]:
+        if final_measurement_basis not in {PauliLetter('X'), PauliLetter('Z')}:
+            raise ValueError(
+                f"Can't handle final measurement basis {final_measurement_basis}. "
+                f"Must be PauliLetter('X') or PauliLetter('Z').")
+        
+        # Start by creating the detectors that just consist of a measurement in the final regular round,
+        # plus single-qubit measurements in the very final round.
+
+        # Figure out which measurements can form a detector - e.g. if measuring out in Z-basis,
+        # then we can form detectors from the ZZ and Z measurements in the final regular round.
+        # Vice versa for X-basis.
+        if final_measurement_basis == PauliLetter('Z'):
+            half_tile_shift = np.array([0, 0])
+        else:
+            half_tile_shift = self._half_tile_side_vector
+        rounds_shift = (total_rounds - 1) * -self.single_round_shift
+        shift = half_tile_shift + rounds_shift
+        # These are the checks that we can form detectors from.
+        anchored_tile_checks = [
+            (tuple(shift + (1, 0)), [(-1, 0), (1, 0)]), 
+            (tuple(shift + (-1, 2)), [(-1, 0), (1, 0)]),
+            (tuple(shift + (0, 5)), [(0, -1), (0, 1)]),
+            (tuple(shift + (2, 5)), [(0, -1), (0, 1)]),
+            (tuple(shift + (3, 8)), [(-1, 0), (1, 0)]),
+            (tuple(shift + (1, 10)), [(-1, 0), (1, 0)]),
+            (tuple(shift + (2, 14)), [(0, 0)])] # Single-qubit measurement!
+        # Now turn this into check anchors that form detectors in the final round across the whole code.
+        tile_coordss = [
+            (x, y)
+            for x in range(self._tiles_width)
+            for y in range(self._tiles_height)]        
+        wrapped_anchored_checks = [
+            (self.wrap_straight_coords(tuple(x * self._tile_bottom_vector + y * self._tile_side_vector + anchor)), endpoints)
+            for (x, y) in tile_coordss
+            for anchor, endpoints in anchored_tile_checks]
+        
+        # Finally, convert these check anchors into measurement detectors.
+        final_detectors = []
+        # Make a distinction between the very final round (in which we do single-qubit measurements)
+        # and the final regular round (in which we measure checks from the usual check schedule).
+        relative_final_regular_round = (total_rounds - 1) % self.schedule_length
+        relative_final_round = total_rounds % self.schedule_length
+        for anchor, endpoints in wrapped_anchored_checks:
+            # Get the check that actually will be measured in the final regular round.
+            check = self._dict_based_check_schedule[relative_final_regular_round][anchor]
+            timed_checks = [(-1, check)]
+            # Now add the single-qubit measurement(s) from the very final round.
+            for endpoint in endpoints:
+                wrapped_endpoint = self.wrap_straight_coords(np.array(anchor) + endpoint)
+                data_qubit = self.data_qubits[wrapped_endpoint]
+                data_qubit_check = final_checks[data_qubit]
+                timed_checks.append((0, data_qubit_check))
+            detector = Detector(timed_checks, relative_final_round, anchor)
+            final_detectors.append(detector)
+        
+        # Now we need to create the detectors that start in the remaining final regular rounds.
+        # If measuring out in the Z-basis,
+        # then the cut-off green detectors will still be detecting webs,
+        # but the cut-off red detectors won't be valid Pauli webs.
+        # Vice versa if measuring out in the X-basis.
+        
+        # In the bulk, there is one detector per half-tile per round.
+        # So at this final boundary there is one detector per WHOLE tile.
+        # The half-tiles with even y-coord are the ones that contain a single-qubit X measurement.
+        # Each of these half-tiles is where a cut-off green detector starts each round.
+        # The half-tiles with odd y-coord are the ones that contain a single-qubit Z measurement.
+        # Each of these half-tiles is where a cut-off red detector starts each round.
+        y_offset = 0 if final_measurement_basis == PauliLetter('Z') else 1
+        half_tile_coordss = [
+            (x, 2*y + y_offset)
+            for x in range(self._tiles_width)
+            for y in range(self._tiles_height)]
+        final_raw_detectors = self._get_final_raw_detectors()
+        raw_detector_anchor = (2, 4)
+        for i, raw_detector in enumerate(final_raw_detectors):
+            detector_start_relative_to_final_round = -(i + 2)
+            for x, y in half_tile_coordss:
+                half_tile_shift = x * self._tile_bottom_vector + y * self._tile_side_vector
+                detector_start = total_rounds + detector_start_relative_to_final_round
+                rounds_shift = detector_start * -self.single_round_shift
+                shift = half_tile_shift + rounds_shift
+
+                shifted_detector_anchor = self.wrap_straight_coords(tuple(shift + raw_detector_anchor))
+                shifted_raw_detector = [[
+                        self.wrap_straight_coords(tuple(np.array(shifted_detector_anchor) + check_anchor)) 
+                        for check_anchor in round_check_anchors]
+                    for round_check_anchors in raw_detector]
+
+                single_qubit_measurement_coordss = shifted_raw_detector[0]
+                single_qubit_measurement_timed_checks = [
+                    (0, final_checks[self.data_qubits[coords]])
+                    for coords in single_qubit_measurement_coordss]
+                timed_checks = single_qubit_measurement_timed_checks
+                
+                remaining_shifted_check_anchors = shifted_raw_detector[1:]
+                for j, shifted_check_anchors in enumerate(remaining_shifted_check_anchors):
+                    round_relative_to_detector_end = -(j + 1)
+                    relative_round = (relative_final_round + round_relative_to_detector_end) % self.schedule_length
+                    timed_checks += [
+                        (round_relative_to_detector_end, self._dict_based_check_schedule[relative_round][check_anchor])
+                        for check_anchor in shifted_check_anchors]
+
+                detector = Detector(timed_checks, relative_final_round, shifted_detector_anchor)
+                final_detectors.append(detector)
+
+        return final_detectors
+
+    def _get_final_raw_detectors(self):
+        # Completely symmetric to _get_initial_raw_detectors!
+        # BUT with the extra complication that we also have to include 
+        # the final single-qubit measurements in the detector.
+        # Wasn't the case for initial detectors - no need to explicitly 
+        # include the initialistion of qubits in the detectors.
+
+        # Detectors in the last few rounds follow an irregular pattern,
+        # due to measurements of the qubits cutting up the detectors, effectively.
+        # We've handled the last round of the regular check schedule already 
+        # (i.e. the one right before we measure the data qubits out), 
+        # so start at the penultimate round of the regular check schedule.
+        round_minus_2_single_qubit_measurements = [
+            (-2, 0), (-2, 2), (0, 0), (0, 2), (2, 0), (4, 0)]
+        round_minus_2_raw_detector = [
+            round_minus_2_single_qubit_measurements,
+            [],
+            [(-2, 1), (0, 1), (3, 0)]]
+
+        round_minus_3_single_qubit_measurements = [
+            (-4, 2), (-2, -2), (-2, 0), (0, -2), (0, 0), (0, 2), (2, 2), (4, 0), (4, 2)]
+        round_minus_3_raw_detector = [
+            round_minus_3_single_qubit_measurements,
+            [(-3, 2), (2, 0)],
             [(-1, -2), (3, 2)],
             [(-2, 1), (0, 1), (3, 0)]]
+            
+        # As in _get_initial_raw_detectors, the next two rounds' detectors are "regular"
+        # in the sense that we just cut off the regular detector at the required round.
+        # But we still need to add the single-qubit measurements to the detectors.
+        round_minus_4_single_qubit_measurements = [
+            (-4, -2), (-4, 0), 
+            (-2, -2), (-2, 0), 
+            (0, -2), (0, 0), (0, 2), 
+            (2, 0), (2, 2), 
+            (4, 0), (4, 2)]
+        round_minus_4_raw_detector = [
+            round_minus_4_single_qubit_measurements,
+            *self._get_raw_detector()[-4:]]
+
+        round_minus_5_single_qubit_measurements = [
+            (-4, -2), (-4, 0), 
+            (-2, -2), (-2, 0), 
+            (0, -2), (0, 0), (0, 2), 
+            (2, 0), (2, 2), 
+            (4, -2), (4, 2)]
+        round_minus_5_raw_detector = [
+            round_minus_5_single_qubit_measurements,
+            *self._get_raw_detector()[-5:]]
+
+        # Next round is a tiny bit irregular - have to add an extra single-qubit measurement.
+        round_minus_6_single_qubit_measurements = [
+            (-4, -2), (-4, 0),
+            (-2, -2), 
+            (0, -2), (0, 0), (0, 2),
+            (2, -2), (2, 0), (2, 2)]
+        round_minus_6_raw_detector = [
+            round_minus_6_single_qubit_measurements,
+            *self._get_raw_detector()[-6:]]
+        round_minus_6_raw_detector[1].append((-2, 0))
+
+        # As regular as can be again.
+        round_minus_7_single_qubit_measurements = [
+            (-4, 0),
+            (-2, 0), 
+            (0, -2), (0, 0),
+            (2, -2), (2, 0)]
+        round_minus_7_raw_detector = [
+            round_minus_7_single_qubit_measurements,
+            *self._get_raw_detector()[-7:]]
         
+        # Important that we stop at round -7! (where round 0 means 
+        # the final round in which we do the single qubit measurements).
+        # The first "full" (not cut off) red detectors start at round -8.
+        # So we want the usual detector schedule to take over at this point. 
+        return [
+            round_minus_2_raw_detector,
+            round_minus_3_raw_detector,
+            round_minus_4_raw_detector,
+            round_minus_5_raw_detector,
+            round_minus_6_raw_detector,
+            round_minus_7_raw_detector]
+
 
 code = NaiveFloquetifiedColourCode(3, 1)
 noise_model = NoNoise()
 syndrome_extractor = NativePauliProductMeasurementsExtractor()
 compiler = NativePauliProductMeasurementsCompiler(noise_model, syndrome_extractor)
+total_rounds = 13
+
 initial_state = State.Zero
 initial_states = {
     qubit: initial_state
     for qubit in code.data_qubits.values()}
 initial_detector_schedule = code.get_initial_detector_schedule(initial_state)
-final_measurements = [
-    Pauli(qubit, PauliLetter('Z'))
-    for qubit in code.data_qubits.values()]
+
+final_measurement_basis = PauliLetter('Z')
+final_checks = {
+    qubit: Check([Pauli(qubit, final_measurement_basis)])
+    for qubit in code.data_qubits.values()}
+final_detectors = code.get_final_detectors(
+    final_measurement_basis,
+    final_checks,
+    total_rounds)
+
 circuit = compiler.compile_to_stim(
     code,
-    total_rounds=13,
+    total_rounds=total_rounds,
     initial_states=initial_states,
     initial_detector_schedule=initial_detector_schedule,
-    final_measurements=final_measurements)
+    final_measurements=final_checks,
+    final_detectors=final_detectors)
 print(circuit)
