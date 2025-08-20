@@ -1,10 +1,10 @@
-from re import S
 from typing import Tuple, List, Dict
 
 import numpy as np
 from main.building_blocks.Check import Check
 from main.building_blocks.Qubit import Qubit
 from main.building_blocks.detectors.Detector import Detector
+from main.building_blocks.logical.DynamicLogicalOperator import DynamicLogicalOperator
 from main.building_blocks.pauli import Pauli
 from main.building_blocks.pauli.PauliLetter import PauliLetter
 from main.codes.Code import Code
@@ -533,6 +533,56 @@ class NaiveFloquetifiedColourCode(Code):
             round_minus_6_raw_detector,
             round_minus_7_raw_detector]
 
+    def get_logical_z_0(self):
+        initial_paulis_tile_coordss = [
+            (2, 2),
+            (4, 2),
+            (4, 4),
+            (2, 6),
+            (2, 8),
+            (2, 10),
+            (0, 12),
+            (0, 14),
+            (2, 14),
+        ]
+        initial_paulis_coordss = [
+            tuple(y * self._tile_side_vector + coords)
+            for coords in initial_paulis_tile_coordss
+            for y in range(self._tiles_height)
+        ]
+        # Note no wrapping of coordinates needed above. 
+        initial_paulis = [
+            Pauli(self.data_qubits[coords], PauliLetter("Z"))
+            for coords in initial_paulis_coordss
+        ]
+
+        def update(round: int) -> List[Check]:
+            # Checks to multiply in depends on the parity of the round!
+            if round % 2 == 0:
+                tile_check_anchors = [
+                    (2, 5), 
+                    (2, 14)]
+            else:
+                tile_check_anchors = [
+                    tuple(-self.single_round_shift + (6, 7)), 
+                    tuple(-self.single_round_shift + (2, 14))]
+            # This 2-round pattern then shifts every two rounds.
+            shift = (round // 2) * (self._tile_bottom_vector - 2 * self.single_round_shift)
+            anchors = [
+                self.wrap_straight_coords(
+                    tuple(shift + anchor + y * self._tile_side_vector)
+                )
+                for anchor in tile_check_anchors
+                for y in range(self._tiles_height)
+            ]
+            checks_to_multiply_in = [
+                self._dict_based_check_schedule[round][anchor]
+                for anchor in anchors
+            ]
+            return checks_to_multiply_in
+
+        logical = DynamicLogicalOperator(initial_paulis, update)
+        return logical
 
 code = NaiveFloquetifiedColourCode(3, 1)
 noise_model = NoNoise()
@@ -555,11 +605,14 @@ final_detectors = code.get_final_detectors(
     final_checks,
     total_rounds)
 
+observables = [code.get_logical_z_0()]
+
 circuit = compiler.compile_to_stim(
     code,
     total_rounds=total_rounds,
     initial_states=initial_states,
     initial_detector_schedule=initial_detector_schedule,
     final_measurements=final_checks,
-    final_detectors=final_detectors)
+    final_detectors=final_detectors,
+    observables=observables)
 print(circuit)
