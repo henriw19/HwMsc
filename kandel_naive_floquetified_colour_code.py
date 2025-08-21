@@ -14,6 +14,7 @@ from main.compiling.compilers.NativePauliProductMeasurementsCompiler import Nati
 from main.compiling.noise.models.NoNoise import NoNoise
 from main.compiling.syndrome_extraction.extractors.NativePauliProductMeasurementsExtractor import \
     NativePauliProductMeasurementsExtractor
+from main.compiling.noise.models.CircuitLevelNoise import CircuitLevelNoise
 from main.utils.enums import State
 
 from utils import flatten_dicts
@@ -575,8 +576,9 @@ class NaiveFloquetifiedColourCode(Code):
                 for anchor in tile_check_anchors
                 for y in range(self._tiles_height)
             ]
+            relative_round = round % self.schedule_length
             checks_to_multiply_in = [
-                self._dict_based_check_schedule[round][anchor]
+                self._dict_based_check_schedule[relative_round][anchor]
                 for anchor in anchors
             ]
             return checks_to_multiply_in
@@ -584,35 +586,36 @@ class NaiveFloquetifiedColourCode(Code):
         logical = DynamicLogicalOperator(initial_paulis, update)
         return logical
 
-code = NaiveFloquetifiedColourCode(3, 1)
-noise_model = NoNoise()
-syndrome_extractor = NativePauliProductMeasurementsExtractor()
-compiler = NativePauliProductMeasurementsCompiler(noise_model, syndrome_extractor)
-total_rounds = 13
+def naive_memory_experiment(tiles_width: int, tiles_height: int, total_rounds: int, physical_error_rate: float):
+    code = NaiveFloquetifiedColourCode(tiles_width, tiles_height)
+    p = physical_error_rate
+    noise_model = CircuitLevelNoise(p, p, p, p, p)
+    syndrome_extractor = NativePauliProductMeasurementsExtractor()
+    compiler = NativePauliProductMeasurementsCompiler(noise_model, syndrome_extractor)
 
-initial_state = State.Zero
-initial_states = {
-    qubit: initial_state
-    for qubit in code.data_qubits.values()}
-initial_detector_schedule = code.get_initial_detector_schedule(initial_state)
+    initial_state = State.Zero
+    initial_states = {
+        qubit: initial_state
+        for qubit in code.data_qubits.values()}
+    initial_detector_schedule = code.get_initial_detector_schedule(initial_state)
 
-final_measurement_basis = PauliLetter('Z')
-final_checks = {
-    qubit: Check([Pauli(qubit, final_measurement_basis)])
-    for qubit in code.data_qubits.values()}
-final_detectors = code.get_final_detectors(
-    final_measurement_basis,
-    final_checks,
-    total_rounds)
+    final_measurement_basis = PauliLetter('Z')
+    final_checks = {
+        qubit: Check([Pauli(qubit, final_measurement_basis)])
+        for qubit in code.data_qubits.values()}
+    final_detectors = code.get_final_detectors(
+        final_measurement_basis,
+        final_checks,
+        total_rounds)
 
-observables = [code.get_logical_z_0()]
+    observables = [code.get_logical_z_0()]
 
-circuit = compiler.compile_to_stim(
-    code,
-    total_rounds=total_rounds,
-    initial_states=initial_states,
-    initial_detector_schedule=initial_detector_schedule,
-    final_measurements=final_checks,
-    final_detectors=final_detectors,
-    observables=observables)
-print(circuit)
+    circuit = compiler.compile_to_stim(
+        code,
+        total_rounds=total_rounds,
+        initial_states=initial_states,
+        initial_detector_schedule=initial_detector_schedule,
+        final_measurements=final_checks,
+        final_detectors=final_detectors,
+        observables=observables)
+    return circuit
