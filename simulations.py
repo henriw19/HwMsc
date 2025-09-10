@@ -1,7 +1,7 @@
 
 from typing import Callable
 
-from kandel_naive_floquetified_colour_code import naive_memory_experiment
+from naive_floquetified_colour_code import naive_memory_experiment
 from datetime import datetime
 from ldpc import BpOsdDecoder
 import stim
@@ -100,8 +100,8 @@ def simulate(
     simulation_data = {}
 
     for size in range(min_size, max_size):
-        tiles_width = 3 * size
-        tiles_height = size
+        tiles_width = 3 * (2 * size - 1)
+        tiles_height = 2 * size - 1
         total_rounds = 13 * size
         code_data = {
             "tiles_width": tiles_width,
@@ -112,7 +112,8 @@ def simulate(
         code_key = str((tiles_width, tiles_height, total_rounds))
         simulation_data[code_key] = code_data
 
-        for physical_error_rate in np.logspace(-5,-1,5):
+        # for physical_error_rate in np.logspace(-5,-1,5):
+        for physical_error_rate in np.logspace(-2,-1,5):
             physical_error_rate_data = {
                 "physical_error_rate": physical_error_rate,
                 "shots": shots,
@@ -122,6 +123,7 @@ def simulate(
             print(f"Creating code...")
             circuit = create_circuit(tiles_width, tiles_height, total_rounds, physical_error_rate)
             dem = circuit.detector_error_model(decompose_errors=True, ignore_decomposition_failures=True)
+            print(f"Shortest graphlike error: {len(dem.shortest_graphlike_error())}")
             detector_pcm, observable_pcm = dem_to_parity_check_matrix(dem)
             sampler = circuit.compile_detector_sampler()
             print(f"Sampling...")
@@ -181,6 +183,6 @@ def simulate(
 
 simulate(
     naive_memory_experiment, 
-    1000, 
+    500, 
     "naive_floquetified_colour_code", 
     "Naive Floquetified Colour Code")

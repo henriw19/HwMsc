@@ -41,7 +41,7 @@ class FaultEquivalentFloquetifiedColourCode(Code):
         # not so much in this new case.
         # Each third-tile is a 'wonky' rectangle within a 4x6 grid of qubits.
         # Throughout, we double the values of all straight coordinates,
-        # so that they're always even, and then we can alson refer to 
+        # so that they're always even, and then we can also refer to 
         # integer coordinates of midpoints of edges between points. 
         
         # Set some initial values about all this geometry.
@@ -69,8 +69,7 @@ class FaultEquivalentFloquetifiedColourCode(Code):
 
         # Figure out the check and detector schedules (fiddly!)
         self._dict_based_check_schedule = self._get_check_schedule()
-        # detector_schedule = self._get_detector_schedule()
-        detector_schedule = [[] for _ in range(48)]
+        detector_schedule = self._get_detector_schedule()
         # Now convert check_schedule to a list of lists rather than list of dicts.
         check_schedule = [
             list(checks_dict.values())
@@ -200,45 +199,124 @@ class FaultEquivalentFloquetifiedColourCode(Code):
         return checks_dict
 
     def _get_detector_schedule(self) -> List[List[Detector]]:
-        # Code has period 13.
-        # There is one detector per half-tile per round.
-        detector_schedule = [[
-                self._realise_raw_detector(
-                    self._get_raw_detector(),
-                    (0, 6),
-                    (x, y),
-                    round)
+        # Code has period 48.
+        # There is one of each type of detector per tile per round -
+        # the big one derived from the colour code, 
+        # then seven types of small ones derived from Ben's fault-equivalent rewrites.
+        
+        detector_data = [
+            (self._get_big_raw_detector(), (4, 16)),
+            (self._get_single_qubit_raw_detector(), (0, 0)),
+            (self._get_flat_bottom_SE_raw_detector(), (1, 3)),
+            (self._get_flat_bottom_NW_raw_detector(), (-1, 29)),
+            (self._get_flat_bottom_wide_raw_detector(), (0, 16)),
+            (self._get_flat_top_SE_raw_detector(), (3, 15)),
+            (self._get_flat_top_NW_raw_detector(), (1, 9)),
+            (self._get_flat_top_wide_raw_detector(), (-4, 26)),
+        ]
+
+        detector_schedule = [
+            [
+                self._realise_raw_detector(raw_detector, round_0_anchor, (x, y), round)
                 for x in range(self._tiles_width)
-                for y in range(2 * self._tiles_height)]
-            for round in range(13)]
+                for y in range(self._tiles_height)
+                for raw_detector, round_0_anchor in detector_data
+            ]
+            for round in range(48)
+        ]
+
         return detector_schedule
 
-    def _get_raw_detector(self):
-        return [
-            [(-3, 0), (0, -1), (2, -1)],
-            [(-3, -2), (1, 2)],
-            [(3, -2), (4, 2)],
-            [(4, -1)],
-            [(-4, 1)],
-            [(-4, -2), (-3, 2)],
-            [(-1, -2), (3, 2)],
-            [(-2, 1), (0, 1), (3, 0)]]
+    def _get_big_raw_detector(self):
+        raw_detector_dict = {
+            0: [(-3, 0)],
+            -1: [(0, -1), (1, 2)],
+            -7: [(-3, -2)],
+            -8: [(2, -1), (4, 2)],
+            -12: [(-3, 1)],
+            -17: [(3, -1)],
+            -21: [(-4, -2), (-2, 1)],
+            -22: [(3, 2)],
+            -28: [(-1, -2), (0, 1)],
+            -29: [(3, 0)],
+        }
+        detector_span = 30
+        raw_detector = [[] for _ in range(detector_span)]
+        for t, anchors in raw_detector_dict.items():
+            raw_detector[-t] = anchors
+        return raw_detector
+    
+    def _get_single_qubit_raw_detector(self):
+        raw_detector = [
+            [(0, 0)],
+            [(0, 0)]
+        ]
+        return raw_detector
+
+    def _get_flat_bottom_SE_raw_detector(self):
+        raw_detector = [
+            [(1, 0)],
+            [(0, -1)],
+            [(0, 0)],
+        ]
+        return raw_detector
+
+    def _get_flat_bottom_NW_raw_detector(self):
+        raw_detector = [
+            [(0, 1)],
+            [(-1, 0)],
+            [(0, 0)],
+        ]
+        return raw_detector
+
+    def _get_flat_top_SE_raw_detector(self):
+        raw_detector = [
+            [(0, 0)],
+            [(1, 0)],
+            [(0, -1)],
+        ]
+        return raw_detector
+
+    def _get_flat_top_NW_raw_detector(self):
+        raw_detector = [
+            [(0, 0)],
+            [(0, 1)],
+            [(-1, 0)],
+        ]
+        return raw_detector
+
+    def _get_flat_bottom_wide_raw_detector(self):
+        raw_detector = [
+            [(1, 0)],
+            [(-1, 0)],
+            [(0, 0)],
+        ]
+        return raw_detector
+
+    def _get_flat_top_wide_raw_detector(self):
+        raw_detector = [
+            [(0, 0)],
+            [(1, 0)],
+            [(-1, 0)],
+        ]
+        return raw_detector
+        
 
     def _realise_raw_detector(
             self,
             raw_detector: List[List[Tuple[int, int]]],
             raw_detector_anchor: Tuple[int, int],
-            half_tile_coords: Tuple[int, int],
+            tile_coords: Tuple[int, int],
             round: int):
-        half_tile_x, half_tile_y = half_tile_coords
+        tile_x, tile_y = tile_coords
         # Now need to shift the whole thing -
-        # One shift accounts for which half-tile we're in
-        half_tile_shift = \
-            half_tile_x * self._half_tile_bottom_vector + \
-            half_tile_y * self._half_tile_side_vector
+        # One shift accounts for which tile we're in
+        tile_shift = \
+            tile_x * self._tile_bottom_vector + \
+            tile_y * self._tile_side_vector
         # Another shift accounts for the round we're in
         round_shift = round * -self.single_round_shift
-        shift = half_tile_shift + round_shift
+        shift = tile_shift + round_shift
 
         shifted_anchor = self.wrap_straight_coords(tuple(shift + raw_detector_anchor))
         shifted_raw_detector = [[
@@ -336,15 +414,15 @@ class FaultEquivalentFloquetifiedColourCode(Code):
             [(3, -2), (-2, 0)]]
         
         # Rounds 3 and 4 just use the regular detector but cut off at the required round.
-        round_3_raw_detector = self._get_raw_detector()[:3 + 1]
-        round_4_raw_detector = self._get_raw_detector()[:4 + 1]
+        round_3_raw_detector = self._get_raw_big_detector()[:3 + 1]
+        round_4_raw_detector = self._get_raw_big_detector()[:4 + 1]
 
         # But annoyingly round 5 is irregular!  
-        round_5_raw_detector = self._get_raw_detector()[:5 + 1]
+        round_5_raw_detector = self._get_raw_big_detector()[:5 + 1]
         round_5_raw_detector[-1].append((2, 0))
 
         # Round 6 is regular again.
-        round_6_raw_detector = self._get_raw_detector()[:6 + 1]
+        round_6_raw_detector = self._get_raw_big_detector()[:6 + 1]
 
         # Important that we stop at round 6! 
         # The first "full" (not cut off) red detectors end at round 7.
@@ -508,7 +586,7 @@ class FaultEquivalentFloquetifiedColourCode(Code):
             (4, 0), (4, 2)]
         round_minus_4_raw_detector = [
             round_minus_4_single_qubit_measurements,
-            *self._get_raw_detector()[-4:]]
+            *self._get_raw_big_detector()[-4:]]
 
         round_minus_5_single_qubit_measurements = [
             (-4, -2), (-4, 0), 
@@ -518,7 +596,7 @@ class FaultEquivalentFloquetifiedColourCode(Code):
             (4, -2), (4, 2)]
         round_minus_5_raw_detector = [
             round_minus_5_single_qubit_measurements,
-            *self._get_raw_detector()[-5:]]
+            *self._get_raw_big_detector()[-5:]]
 
         # Next round is a tiny bit irregular - have to add an extra single-qubit measurement.
         round_minus_6_single_qubit_measurements = [
@@ -528,7 +606,7 @@ class FaultEquivalentFloquetifiedColourCode(Code):
             (2, -2), (2, 0), (2, 2)]
         round_minus_6_raw_detector = [
             round_minus_6_single_qubit_measurements,
-            *self._get_raw_detector()[-6:]]
+            *self._get_raw_big_detector()[-6:]]
         round_minus_6_raw_detector[1].append((-2, 0))
 
         # As regular as can be again.
@@ -539,7 +617,7 @@ class FaultEquivalentFloquetifiedColourCode(Code):
             (2, -2), (2, 0)]
         round_minus_7_raw_detector = [
             round_minus_7_single_qubit_measurements,
-            *self._get_raw_detector()[-7:]]
+            *self._get_raw_big_detector()[-7:]]
         
         # Important that we stop at round -7! (where round 0 means 
         # the final round in which we do the single qubit measurements).
@@ -608,7 +686,8 @@ class FaultEquivalentFloquetifiedColourCode(Code):
 def fault_equivalent_memory_experiment(tiles_width: int, tiles_height: int, total_rounds: int, physical_error_rate: float):
     code = FaultEquivalentFloquetifiedColourCode(tiles_width, tiles_height)
     p = physical_error_rate
-    noise_model = CircuitLevelNoise(p, p, p, p, p)
+    # noise_model = CircuitLevelNoise(p, p, p, p, p)
+    noise_model = NoNoise()
     syndrome_extractor = NativePauliProductMeasurementsExtractor()
     compiler = NativePauliProductMeasurementsCompiler(noise_model, syndrome_extractor)
 
@@ -616,18 +695,22 @@ def fault_equivalent_memory_experiment(tiles_width: int, tiles_height: int, tota
     initial_states = {
         qubit: initial_state
         for qubit in code.data_qubits.values()}
-    initial_detector_schedule = code.get_initial_detector_schedule(initial_state)
+    # initial_detector_schedule = code.get_initial_detector_schedule(initial_state)
+    initial_detector_schedule = [[] for _ in range(29)]
+    # initial_detector_schedule = None
 
     final_measurement_basis = PauliLetter('Z')
     final_checks = {
         qubit: Check([Pauli(qubit, final_measurement_basis)])
         for qubit in code.data_qubits.values()}
-    final_detectors = code.get_final_detectors(
-        final_measurement_basis,
-        final_checks,
-        total_rounds)
+    # final_detectors = code.get_final_detectors(
+    #     final_measurement_basis,
+    #     final_checks,
+    #     total_rounds)
+    final_detectors = None
 
-    observables = [code.get_logical_z_0()]
+    # observables = [code.get_logical_z_0()]
+    observables = None
 
     circuit = compiler.compile_to_stim(
         code,
@@ -638,3 +721,16 @@ def fault_equivalent_memory_experiment(tiles_width: int, tiles_height: int, tota
         final_detectors=final_detectors,
         observables=observables)
     return circuit
+
+def print_check_schedules():
+    project_root = Path('/Users/teague/Coding/Research/Quantum/HwMsc')
+    now = datetime.now().strftime('%Y%m%d_%H%M%S')
+    output_path = Path(project_root / f'printouts/FaultEquivalent/{now}')
+    code = FaultEquivalentFloquetifiedColourCode(3, 2)
+    printer = Printer2D()
+    printer.print_code(code, output_path, print_logicals=False)
+
+# print_check_schedules()
+circuit = fault_equivalent_memory_experiment(3, 1, 48, 0.1)
+dem = circuit.detector_error_model(decompose_errors=True, ignore_decomposition_failures=True)
+print(dem)
