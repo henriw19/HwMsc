@@ -204,15 +204,15 @@ class FaultEquivalentFloquetifiedColourCode(Code):
         # the big one derived from the colour code, 
         # then seven types of small ones derived from Ben's fault-equivalent rewrites.
         
-        detector_data = [
-            (self._get_big_raw_detector(), (4, 16)),
-            (self._get_single_qubit_raw_detector(), (0, 0)),
-            (self._get_flat_bottom_SE_raw_detector(), (1, 3)),
-            (self._get_flat_bottom_NW_raw_detector(), (-1, 29)),
-            (self._get_flat_bottom_wide_raw_detector(), (0, 16)),
-            (self._get_flat_top_SE_raw_detector(), (3, 15)),
-            (self._get_flat_top_NW_raw_detector(), (1, 9)),
-            (self._get_flat_top_wide_raw_detector(), (-4, 26)),
+        anchored_raw_detectors = [
+            self._get_big_raw_detector(),
+            self._get_single_qubit_raw_detector(),
+            self._get_flat_bottom_SE_raw_detector(),
+            self._get_flat_bottom_NW_raw_detector(),
+            self._get_flat_bottom_wide_raw_detector(),
+            self._get_flat_top_SE_raw_detector(),
+            self._get_flat_top_NW_raw_detector(),
+            self._get_flat_top_wide_raw_detector(),
         ]
 
         detector_schedule = [
@@ -220,7 +220,7 @@ class FaultEquivalentFloquetifiedColourCode(Code):
                 self._realise_raw_detector(raw_detector, round_0_anchor, (x, y), round)
                 for x in range(self._tiles_width)
                 for y in range(self._tiles_height)
-                for raw_detector, round_0_anchor in detector_data
+                for raw_detector, round_0_anchor in anchored_raw_detectors
             ]
             for round in range(48)
         ]
@@ -244,22 +244,25 @@ class FaultEquivalentFloquetifiedColourCode(Code):
         raw_detector = [[] for _ in range(detector_span)]
         for t, anchors in raw_detector_dict.items():
             raw_detector[-t] = anchors
-        return raw_detector
-    
+        round_0_anchor = (4, 16)
+        return raw_detector, round_0_anchor
+        
     def _get_single_qubit_raw_detector(self):
         raw_detector = [
             [(0, 0)],
             [(0, 0)]
         ]
-        return raw_detector
-
+        round_0_anchor = (0, 0)
+        return raw_detector, round_0_anchor
+        
     def _get_flat_bottom_SE_raw_detector(self):
         raw_detector = [
             [(1, 0)],
             [(0, -1)],
             [(0, 0)],
         ]
-        return raw_detector
+        round_0_anchor = (1, 3)
+        return raw_detector, round_0_anchor
 
     def _get_flat_bottom_NW_raw_detector(self):
         raw_detector = [
@@ -267,7 +270,17 @@ class FaultEquivalentFloquetifiedColourCode(Code):
             [(-1, 0)],
             [(0, 0)],
         ]
-        return raw_detector
+        round_0_anchor = (-1, 29)
+        return raw_detector, round_0_anchor
+    
+    def _get_flat_bottom_wide_raw_detector(self):
+        raw_detector = [
+            [(1, 0)],
+            [(-1, 0)],
+            [(0, 0)],
+        ]
+        round_0_anchor = (0, 16)
+        return raw_detector, round_0_anchor
 
     def _get_flat_top_SE_raw_detector(self):
         raw_detector = [
@@ -275,7 +288,8 @@ class FaultEquivalentFloquetifiedColourCode(Code):
             [(1, 0)],
             [(0, -1)],
         ]
-        return raw_detector
+        round_0_anchor = (3, 15)
+        return raw_detector, round_0_anchor
 
     def _get_flat_top_NW_raw_detector(self):
         raw_detector = [
@@ -283,15 +297,8 @@ class FaultEquivalentFloquetifiedColourCode(Code):
             [(0, 1)],
             [(-1, 0)],
         ]
-        return raw_detector
-
-    def _get_flat_bottom_wide_raw_detector(self):
-        raw_detector = [
-            [(1, 0)],
-            [(-1, 0)],
-            [(0, 0)],
-        ]
-        return raw_detector
+        round_0_anchor = (1, 9)
+        return raw_detector, round_0_anchor
 
     def _get_flat_top_wide_raw_detector(self):
         raw_detector = [
@@ -299,7 +306,8 @@ class FaultEquivalentFloquetifiedColourCode(Code):
             [(1, 0)],
             [(-1, 0)],
         ]
-        return raw_detector
+        round_0_anchor = (-4, 26)
+        return raw_detector, round_0_anchor
         
 
     def _realise_raw_detector(
@@ -336,56 +344,6 @@ class FaultEquivalentFloquetifiedColourCode(Code):
             raise ValueError(
                 f"Can't handle initial state {initial_state}. "
                 f"Must be State.Zero or State.Plus.")
-        # In the zeroth round (immediately after initialisation),
-        # if we initialised in |0> (+1 eigenstate of PauliLetter('Z')),
-        # then every ZZ or Z measurement is a detector.
-        # Vice versa for initialisation in |+> with XX and X measurements.
-        if initial_state == State.Zero:
-            half_tile_shift = np.array([0, 0])
-        else:
-            half_tile_shift = self._half_tile_side_vector
-        # Write down anchors of all the checks in one tile that form detectors in round 0.
-        tile_check_anchors = [
-            tuple(half_tile_shift + (1, 0)), 
-            tuple(half_tile_shift + (-1, 2)),
-            tuple(half_tile_shift + (0, 5)),
-            tuple(half_tile_shift + (2, 5)),
-            tuple(half_tile_shift + (3, 8)),
-            tuple(half_tile_shift + (1, 10)),
-            tuple(half_tile_shift + (2, 14))]
-        # Now turn this into check anchors that form detectors in round 0 across the whole code.
-        tile_coordss = [
-            (x, y)
-            for x in range(self._tiles_width)
-            for y in range(self._tiles_height)]        
-        check_anchors = [
-            self.wrap_straight_coords(tuple(
-                x * self._tile_bottom_vector + y * self._tile_side_vector + anchor))
-            for (x, y) in tile_coordss
-            for anchor in tile_check_anchors]
-
-        # Finally, convert these check anchors into single measurement detectors.
-        detectors = [
-            Detector([(0, self._dict_based_check_schedule[0][check_anchor])], 0, check_anchor)
-            for check_anchor in check_anchors]
-        initial_detector_schedule = [detectors]
-
-        # In subsequent initial rounds, if we initialised in |0>,
-        # then the cut-off green detectors will still be detecting webs,
-        # but the cut-off red detectors won't be valid Pauli webs.
-        # Vice versa for |+>.
-        
-        # In the bulk, there is one detector per half-tile per round.
-        # So at this initial boundary there is one detector per WHOLE tile.
-        # The half-tiles with even y-coord are the ones that contain a single-qubit X measurement.
-        # Each of these half-tiles is where a cut-off green detector ends each round.
-        # The half-tiles with odd y-coord are the ones that contain a single-qubit Z measurement.
-        # Each of these half-tiles is where a cut-off red detector ends each round.
-        y_offset = 0 if initial_state == State.Zero else 1
-        half_tile_coordss = [
-            (x, 2*y + y_offset)
-            for x in range(self._tiles_width)
-            for y in range(self._tiles_height)]
 
         initial_raw_detectors = self._get_initial_raw_detectors()
         for i, raw_detector in enumerate(initial_raw_detectors):
@@ -400,11 +358,112 @@ class FaultEquivalentFloquetifiedColourCode(Code):
                 for half_tile_coords in half_tile_coordss]
             initial_detector_schedule.append(round_detectors)
         return initial_detector_schedule
+    
+    def _get_simpler_initial_detector_schedule(self, initial_state: State):
+        allowed_states = [State.Zero, State.Plus]
+        if initial_state not in allowed_states:
+            raise ValueError(
+                f"Can't handle initial state {initial_state}. "
+                f"Must be in {allowed_states}.")
+        
+        # For simpler version, just use the simple cut-off detectors - 
+        # no optimising to find extra detectors.
+        
+        # Big detector spans 30 rounds. 
+        # So round 29 is when we can stop and let the usual schedule kick in again.
+        tile_coordss = [
+            (x, y) 
+            for x in range(self._tiles_width) 
+            for y in range(self._tiles_height)]
+        initial_detector_schedule = [[] for round in range(29)]
+
+        # Populate the initial schedule one detector type at a time.
+        # Start with the single-qubit measurements - since these only span 2 rounds,
+        # these are only cut-off in round 0, and only form a detector if initialised in |+>.
+        round = 0
+        raw_detector, round_0_anchor = self._get_single_qubit_raw_detector()
+        if initial_state == State.Plus:
+            cutoff_raw_detector = raw_detector[:round + 1]
+            for tile_coords in tile_coordss:
+                detector = self._realise_raw_detector(
+                    cutoff_raw_detector, round_0_anchor, tile_coords, round)
+                initial_detector_schedule[round].append(detector)
+        # For the remaining rounds, add a non-cutoff detector per tile per round.
+        for round in range(1, 29):
+            for tile_coords in tile_coordss:
+                detector = self._realise_raw_detector(
+                    raw_detector, round_0_anchor, tile_coords, round)
+                initial_detector_schedule[round].append(detector)
+        
+        # Next handle all of the small types of detectors. 
+        # All of these only span two rounds, so can only be cut off in rounds 0 and 1.
+        # Some of them form green detectors in even rounds and red detectors in odd rounds, 
+        # while the rest form green detectors in odd rounds and red detectors in even rounds.
+        even_round_green_anchored_raw_detectors = [
+                self._get_flat_top_SE_raw_detector(),
+                self._get_flat_top_NW_raw_detector(),
+                self._get_flat_bottom_wide_raw_detector(),
+            ]
+        odd_round_green_anchored_raw_detectors = [
+                self._get_flat_bottom_SE_raw_detector(),
+                self._get_flat_bottom_NW_raw_detector(),
+                self._get_flat_top_wide_raw_detector(),
+            ]
+        even_round_red_anchored_raw_detectors = odd_round_green_anchored_raw_detectors
+        odd_round_red_anchored_raw_detectors = even_round_green_anchored_raw_detectors
+
+        for round in range(0, 2):
+            if initial_state == State.Zero:
+                if round % 2 == 0:
+                    anchored_raw_detectors = even_round_green_anchored_raw_detectors
+                else:
+                    anchored_raw_detectors = odd_round_green_anchored_raw_detectors
+            elif initial_state == State.Plus:
+                if round % 2 == 0:
+                    anchored_raw_detectors = even_round_red_anchored_raw_detectors
+                else:
+                    anchored_raw_detectors = odd_round_red_anchored_raw_detectors
+                anchored_raw_detectors = even_round_red_anchored_raw_detectors
+            for raw_detector, round_0_anchor in anchored_raw_detectors:
+                cutoff_raw_detector = raw_detector[:round + 1]
+                for tile_coords in tile_coordss:
+                    detector = self._realise_raw_detector(
+                        cutoff_raw_detector, round_0_anchor, tile_coords, round)
+                    initial_detector_schedule[round].append(detector)
+        # For the remaining rounds, for each detector type, 
+        # add a non-cutoff detector per tile per round.
+        anchored_raw_detectors = \
+            even_round_green_anchored_raw_detectors + \
+            odd_round_green_anchored_raw_detectors
+        for round in range(2, 29):
+            for tile_coords in tile_coordss:
+                for raw_detector, round_0_anchor in anchored_raw_detectors:
+                    detector = self._realise_raw_detector(
+                        raw_detector, round_0_anchor, tile_coords, round)
+                    initial_detector_schedule[round].append(detector)
+
+        # Finally, handle the big detectors.
+        # Big detectors are green in even rounds, red in odd rounds.
+        # So if initialised in zero state, we get a cutoff big detector every even round.
+        # Else if initialised in plus state, we get a cutoff big detector every odd round.
+        start_round = 0 if initial_state == State.Zero else 1
+        raw_detector, round_0_anchor = self._get_big_raw_detector()
+        for round in range(start_round, 29, 2):
+            cutoff_raw_detector = raw_detector[:round + 1]
+            for tile_coords in tile_coordss:
+                detector = self._realise_raw_detector(
+                    cutoff_raw_detector, round_0_anchor, tile_coords, round)
+                initial_detector_schedule[round].append(detector)
+    
+        return initial_detector_schedule
+
         
     def _get_initial_raw_detectors(self):
         # Detectors in the first few rounds follow an irregular pattern,
         # due to initialisation of the qubits cutting up the detectors, effectively.
-        # We've handled round 0 already, so start at round 1.
+        round_0_raw_detector = [
+            [(3, 0)]
+        ]
         round_1_raw_detector = [
             [(-3, 0), (0, -1), (2, -1)],
             []]        
@@ -692,11 +751,13 @@ def fault_equivalent_memory_experiment(tiles_width: int, tiles_height: int, tota
     compiler = NativePauliProductMeasurementsCompiler(noise_model, syndrome_extractor)
 
     initial_state = State.Zero
+    # initial_state = State.Plus
     initial_states = {
         qubit: initial_state
         for qubit in code.data_qubits.values()}
     # initial_detector_schedule = code.get_initial_detector_schedule(initial_state)
-    initial_detector_schedule = [[] for _ in range(29)]
+    initial_detector_schedule = code._get_simpler_initial_detector_schedule(initial_state)
+    # initial_detector_schedule = [[] for _ in range(29)]
     # initial_detector_schedule = None
 
     final_measurement_basis = PauliLetter('Z')
@@ -733,4 +794,6 @@ def print_check_schedules():
 # print_check_schedules()
 circuit = fault_equivalent_memory_experiment(3, 1, 48, 0.1)
 dem = circuit.detector_error_model(decompose_errors=True, ignore_decomposition_failures=True)
-print(dem)
+# print(dem)
+
+
