@@ -1,3 +1,4 @@
+from collections import Counter
 from typing import Tuple, List, Dict
 from pathlib import Path
 from datetime import datetime
@@ -340,24 +341,7 @@ class FaultEquivalentFloquetifiedColourCode(Code):
         return detector
 
     def get_initial_detector_schedule(self, initial_state: State):
-        if initial_state not in {State.Zero, State.Plus}:
-            raise ValueError(
-                f"Can't handle initial state {initial_state}. "
-                f"Must be State.Zero or State.Plus.")
-
-        initial_raw_detectors = self._get_initial_raw_detectors()
-        for i, raw_detector in enumerate(initial_raw_detectors):
-            # Round 0 already handled so rounds here are 1 more than the list index.
-            round = i + 1
-            round_detectors = [
-                self._realise_raw_detector(
-                    raw_detector,
-                    (0, 6),
-                    half_tile_coords,
-                    round)
-                for half_tile_coords in half_tile_coordss]
-            initial_detector_schedule.append(round_detectors)
-        return initial_detector_schedule
+        pass
     
     def _get_simpler_initial_detector_schedule(self, initial_state: State):
         allowed_states = [State.Zero, State.Plus]
@@ -423,7 +407,6 @@ class FaultEquivalentFloquetifiedColourCode(Code):
                     anchored_raw_detectors = even_round_red_anchored_raw_detectors
                 else:
                     anchored_raw_detectors = odd_round_red_anchored_raw_detectors
-                anchored_raw_detectors = even_round_red_anchored_raw_detectors
             for raw_detector, round_0_anchor in anchored_raw_detectors:
                 cutoff_raw_detector = raw_detector[:round + 1]
                 for tile_coords in tile_coordss:
@@ -459,288 +442,179 @@ class FaultEquivalentFloquetifiedColourCode(Code):
 
         
     def _get_initial_raw_detectors(self):
-        # Detectors in the first few rounds follow an irregular pattern,
-        # due to initialisation of the qubits cutting up the detectors, effectively.
-        round_0_raw_detector = [
-            [(3, 0)]
-        ]
-        round_1_raw_detector = [
-            [(-3, 0), (0, -1), (2, -1)],
-            []]        
-        round_2_raw_detector = [
-            [(-3, 0), (0, -1), (2, -1)],
-            [(-3, -2), (1, 2)],
-            [(3, -2), (-2, 0)]]
+        pass
+
+    def get_simpler_final_detectors(
+            self, 
+            final_measurement_basis: PauliLetter,
+            final_checks: Dict[Qubit, Check],
+            total_rounds: int
+    ) -> List[List[Detector]]:
+        allowed_final_measurement_bases = [PauliLetter('X'), PauliLetter('Z')]
+        if final_measurement_basis not in allowed_final_measurement_bases:
+            raise ValueError(
+                f"Can't handle final measurement basis {final_measurement_basis}. "
+                f"Must be in {allowed_final_measurement_bases}.")
+
+        final_detectors = []
+        tile_coordss = [
+            (x, y) 
+            for x in range(self._tiles_width) 
+            for y in range(self._tiles_height)]
+
+        # Populate the final detectors one detector type at a time.
+        # Start with the single-qubit measurements - since these only span 2 rounds,
+        # these are only cut-off in the final round.
+        # Single-qubit measurement detectors are green if they end in odd rounds 
+        # and red if they end in even rounds.
+        # So cutoff versions only form a detector if measuring in Z and final regular round is even
+        # (so very final round consisting of single qubit measurements is odd)
+        # or if measuring in X and final regular round is odd
+        # (so very final round consisting of single qubit measurements is even)
+        raw_detector, round_0_anchor = self._get_single_qubit_raw_detector()
+        make_green_detector = final_measurement_basis == PauliLetter('Z') and total_rounds % 2 == 1
+        make_red_detector = final_measurement_basis == PauliLetter('X') and total_rounds % 2 == 0
+        if make_green_detector or make_red_detector:
+            _, round_0_anchor = self._get_single_qubit_raw_detector()
+            rounds_shift = total_rounds * -self.single_round_shift
+            final_round_anchor = rounds_shift + round_0_anchor
+            for tile_coords in tile_coordss:
+                anchor = self.wrap_straight_coords(tuple(final_round_anchor + tile_coords))
+                qubit = self.data_qubits[anchor]
+                final_regular_check = self._dict_based_check_schedule[total_rounds - 1][anchor]
+                very_final_check = final_checks[qubit]
+                timed_checks = [
+                    (0, very_final_check),
+                    (-1, final_regular_check)]
+                detector = Detector(timed_checks, 0, anchor)
+                final_detectors.append(detector)
         
-        # Rounds 3 and 4 just use the regular detector but cut off at the required round.
-        round_3_raw_detector = self._get_raw_big_detector()[:3 + 1]
-        round_4_raw_detector = self._get_raw_big_detector()[:4 + 1]
+        # Next up it's the six types of small detectors
 
-        # But annoyingly round 5 is irregular!  
-        round_5_raw_detector = self._get_raw_big_detector()[:5 + 1]
-        round_5_raw_detector[-1].append((2, 0))
+        # Next handle all of the small types of detectors. 
+        # All of these only span two rounds, so can only be cut off in rounds 0 and 1.
+        # Some of them form green detectors in even rounds and red detectors in odd rounds, 
+        # while the rest form green detectors in odd rounds and red detectors in even rounds.
+        even_round_green_anchored_raw_detectors = [
+                self._get_flat_top_SE_raw_detector(),
+                self._get_flat_top_NW_raw_detector(),
+                self._get_flat_bottom_wide_raw_detector(),
+            ]
+        odd_round_green_anchored_raw_detectors = [
+                self._get_flat_bottom_SE_raw_detector(),
+                self._get_flat_bottom_NW_raw_detector(),
+                self._get_flat_top_wide_raw_detector(),
+            ]
+        even_round_red_anchored_raw_detectors = odd_round_green_anchored_raw_detectors
+        odd_round_red_anchored_raw_detectors = even_round_green_anchored_raw_detectors
 
-        # Round 6 is regular again.
-        round_6_raw_detector = self._get_raw_big_detector()[:6 + 1]
+        for t in range(0, 2):
+            round_detector_would_have_ended_in = total_rounds + t
+            rounds_cut_off = t + 1
+            rounds_shift = round_detector_would_have_ended_in * -self.single_round_shift
+            if final_measurement_basis == PauliLetter('Z'):
+                if round_detector_would_have_ended_in % 2 == 0:
+                    anchored_raw_detectors = even_round_green_anchored_raw_detectors
+                else:
+                    anchored_raw_detectors = odd_round_green_anchored_raw_detectors
+            elif final_measurement_basis == PauliLetter('X'):
+                if round_detector_would_have_ended_in % 2 == 0:
+                    anchored_raw_detectors = even_round_red_anchored_raw_detectors
+                else:
+                    anchored_raw_detectors = odd_round_red_anchored_raw_detectors
+            for tile_x, tile_y in tile_coordss:    
+                for raw_detector, round_0_anchor in anchored_raw_detectors:
+                    tile_shift = tile_x * self._tile_bottom_vector + tile_y * self._tile_side_vector
+                    final_round_anchor = self.wrap_straight_coords(
+                        tuple(rounds_shift + tile_shift + round_0_anchor))
+                    cutoff_detector = self._realise_cutoff_detector(
+                        raw_detector, final_round_anchor, rounds_cut_off, total_rounds, final_checks)
+                    final_detectors.append(cutoff_detector)
+        
+        # Finally, handle the big detectors. 
+        # Big detectors are green if they end in even rounds, red in odd rounds, and span 30 rounds
+        # (e.g. if one starts in round t it ends in round t + 29).
+        # So if measuring in Z basis, we get a cutoff green detector if 
+        # the detector would have ended in an even round, i.e. if it starts in an odd round.
+        # Vice versa if measuring in X basis we get a cutoff red detector if 
+        # the detector would have ended in an odd round, i.e. if it starts in an even round.
+        # Since total_rounds - 1 denotes the final regular round,
+        # then cutoff big detectors start in round total_rounds - 1 - 28.
+        raw_detector, round_0_anchor = self._get_big_raw_detector()
+        potential_cutoff_start_round = total_rounds - 1 - 28
+        if final_measurement_basis == PauliLetter('Z'):
+            if potential_cutoff_start_round % 2 == 0:
+                cutoff_start_round = potential_cutoff_start_round + 1
+            else:
+                cutoff_start_round = potential_cutoff_start_round
+        elif final_measurement_basis == PauliLetter('X'):
+            if potential_cutoff_start_round % 2 == 0:
+                cutoff_start_round = potential_cutoff_start_round
+            else:
+                cutoff_start_round = potential_cutoff_start_round + 1
+        for round in range(cutoff_start_round, total_rounds, 2):
+            # potential_cutoff_start_round is the round in which detectors would have 1 round cut off.
+            # So to figure out how many rounds have been cut off in this particular round,
+            # we add 1 to the difference between the round and the potential cutoff start round.
+            rounds_cut_off = 1 + round - potential_cutoff_start_round
+            round_detector_would_have_ended_in = round + 29
+            rounds_shift = round_detector_would_have_ended_in * -self.single_round_shift
+            for tile_x, tile_y in tile_coordss:    
+                tile_shift = tile_x * self._tile_bottom_vector + tile_y * self._tile_side_vector
+                final_round_anchor = self.wrap_straight_coords(
+                    tuple(rounds_shift + tile_shift + round_0_anchor))
+                cutoff_detector = self._realise_cutoff_detector(
+                    raw_detector, final_round_anchor, rounds_cut_off, total_rounds, final_checks)
+                final_detectors.append(cutoff_detector)
+        
+        return final_detectors
 
-        # Important that we stop at round 6! 
-        # The first "full" (not cut off) red detectors end at round 7.
-        # So we want the usual detector schedule to take over at this point. 
-        return [
-            round_1_raw_detector,
-            round_2_raw_detector,
-            round_3_raw_detector,
-            round_4_raw_detector,
-            round_5_raw_detector,
-            round_6_raw_detector]
+
+    def _realise_cutoff_detector(
+            self, 
+            raw_detector: List[List[Tuple[int, int]]], 
+            final_round_anchor: Tuple[int, int], 
+            rounds_cut_off: int,
+            total_rounds: int,
+            final_checks: Dict[Qubit, Check]):
+        cutoff_raw_detector = raw_detector[rounds_cut_off:]
+        timed_checks = []
+        qubits_involved = Counter()
+        for rounds_from_end, raw_anchors in enumerate(cutoff_raw_detector):
+            round = total_rounds - 1 - rounds_from_end
+            relative_round = round % self.schedule_length
+            for raw_anchor in raw_anchors:
+                anchor = self.wrap_straight_coords(tuple(np.array(final_round_anchor) + raw_anchor))
+                check = self._dict_based_check_schedule[relative_round][anchor]
+                timed_checks.append((-(rounds_from_end + 1), check))
+                check_qubits = [pauli.qubit for pauli in check.paulis.values()]
+                qubits_involved.update(check_qubits)
+        very_final_qubits = [
+            qubit
+            for qubit, count in qubits_involved.items()
+            if count % 2 == 1 
+        ]
+        very_final_checks = [final_checks[qubit] for qubit in very_final_qubits]
+        timed_checks.extend([(0, check) for check in very_final_checks])
+        relative_very_final_round = total_rounds % self.schedule_length
+        cutoff_detector = Detector(timed_checks, relative_very_final_round, final_round_anchor)
+        return cutoff_detector
+
+
 
     def get_final_detectors(
             self, 
             final_measurement_basis: PauliLetter,
             final_checks: Dict[Qubit, Check],
             total_rounds: int
-    ) -> List[List[Detector]]:
-        if final_measurement_basis not in {PauliLetter('X'), PauliLetter('Z')}:
-            raise ValueError(
-                f"Can't handle final measurement basis {final_measurement_basis}. "
-                f"Must be PauliLetter('X') or PauliLetter('Z').")
-        
-        # Start by creating the detectors that just consist of a measurement in the final regular round,
-        # plus single-qubit measurements in the very final round.
-
-        # Figure out which measurements can form a detector - e.g. if measuring out in Z-basis,
-        # then we can form detectors from the ZZ and Z measurements in the final regular round.
-        # Vice versa for X-basis.
-        if final_measurement_basis == PauliLetter('Z'):
-            half_tile_shift = np.array([0, 0])
-        else:
-            half_tile_shift = self._half_tile_side_vector
-        rounds_shift = (total_rounds - 1) * -self.single_round_shift
-        shift = half_tile_shift + rounds_shift
-        # These are the checks that we can form detectors from.
-        anchored_tile_checks = [
-            (tuple(shift + (1, 0)), [(-1, 0), (1, 0)]), 
-            (tuple(shift + (-1, 2)), [(-1, 0), (1, 0)]),
-            (tuple(shift + (0, 5)), [(0, -1), (0, 1)]),
-            (tuple(shift + (2, 5)), [(0, -1), (0, 1)]),
-            (tuple(shift + (3, 8)), [(-1, 0), (1, 0)]),
-            (tuple(shift + (1, 10)), [(-1, 0), (1, 0)]),
-            (tuple(shift + (2, 14)), [(0, 0)])] # Single-qubit measurement!
-        # Now turn this into check anchors that form detectors in the final round across the whole code.
-        tile_coordss = [
-            (x, y)
-            for x in range(self._tiles_width)
-            for y in range(self._tiles_height)]        
-        wrapped_anchored_checks = [
-            (self.wrap_straight_coords(tuple(x * self._tile_bottom_vector + y * self._tile_side_vector + anchor)), endpoints)
-            for (x, y) in tile_coordss
-            for anchor, endpoints in anchored_tile_checks]
-        
-        # Finally, convert these check anchors into measurement detectors.
-        final_detectors = []
-        # Make a distinction between the very final round (in which we do single-qubit measurements)
-        # and the final regular round (in which we measure checks from the usual check schedule).
-        relative_final_regular_round = (total_rounds - 1) % self.schedule_length
-        relative_final_round = total_rounds % self.schedule_length
-        for anchor, endpoints in wrapped_anchored_checks:
-            # Get the check that actually will be measured in the final regular round.
-            check = self._dict_based_check_schedule[relative_final_regular_round][anchor]
-            timed_checks = [(-1, check)]
-            # Now add the single-qubit measurement(s) from the very final round.
-            for endpoint in endpoints:
-                wrapped_endpoint = self.wrap_straight_coords(np.array(anchor) + endpoint)
-                data_qubit = self.data_qubits[wrapped_endpoint]
-                data_qubit_check = final_checks[data_qubit]
-                timed_checks.append((0, data_qubit_check))
-            detector = Detector(timed_checks, relative_final_round, anchor)
-            final_detectors.append(detector)
-        
-        # Now we need to create the detectors that start in the remaining final regular rounds.
-        # If measuring out in the Z-basis,
-        # then the cut-off green detectors will still be detecting webs,
-        # but the cut-off red detectors won't be valid Pauli webs.
-        # Vice versa if measuring out in the X-basis.
-        
-        # In the bulk, there is one detector per half-tile per round.
-        # So at this final boundary there is one detector per WHOLE tile.
-        # The half-tiles with even y-coord are the ones that contain a single-qubit X measurement.
-        # Each of these half-tiles is where a cut-off green detector starts each round.
-        # The half-tiles with odd y-coord are the ones that contain a single-qubit Z measurement.
-        # Each of these half-tiles is where a cut-off red detector starts each round.
-        y_offset = 0 if final_measurement_basis == PauliLetter('Z') else 1
-        half_tile_coordss = [
-            (x, 2*y + y_offset)
-            for x in range(self._tiles_width)
-            for y in range(self._tiles_height)]
-        final_raw_detectors = self._get_final_raw_detectors()
-        raw_detector_anchor = (2, 4)
-        for i, raw_detector in enumerate(final_raw_detectors):
-            detector_start_relative_to_final_round = -(i + 2)
-            for x, y in half_tile_coordss:
-                half_tile_shift = x * self._tile_bottom_vector + y * self._tile_side_vector
-                detector_start = total_rounds + detector_start_relative_to_final_round
-                rounds_shift = detector_start * -self.single_round_shift
-                shift = half_tile_shift + rounds_shift
-
-                shifted_detector_anchor = self.wrap_straight_coords(tuple(shift + raw_detector_anchor))
-                shifted_raw_detector = [[
-                        self.wrap_straight_coords(tuple(np.array(shifted_detector_anchor) + check_anchor)) 
-                        for check_anchor in round_check_anchors]
-                    for round_check_anchors in raw_detector]
-
-                single_qubit_measurement_coordss = shifted_raw_detector[0]
-                single_qubit_measurement_timed_checks = [
-                    (0, final_checks[self.data_qubits[coords]])
-                    for coords in single_qubit_measurement_coordss]
-                timed_checks = single_qubit_measurement_timed_checks
-                
-                remaining_shifted_check_anchors = shifted_raw_detector[1:]
-                for j, shifted_check_anchors in enumerate(remaining_shifted_check_anchors):
-                    round_relative_to_detector_end = -(j + 1)
-                    relative_round = (relative_final_round + round_relative_to_detector_end) % self.schedule_length
-                    timed_checks += [
-                        (round_relative_to_detector_end, self._dict_based_check_schedule[relative_round][check_anchor])
-                        for check_anchor in shifted_check_anchors]
-
-                detector = Detector(timed_checks, relative_final_round, shifted_detector_anchor)
-                final_detectors.append(detector)
-
-        return final_detectors
+    ) -> List[Detector]:
+        pass
 
     def _get_final_raw_detectors(self):
-        # Completely symmetric to _get_initial_raw_detectors!
-        # BUT with the extra complication that we also have to include 
-        # the final single-qubit measurements in the detector.
-        # Wasn't the case for initial detectors - no need to explicitly 
-        # include the initialistion of qubits in the detectors.
-
-        # Detectors in the last few rounds follow an irregular pattern,
-        # due to measurements of the qubits cutting up the detectors, effectively.
-        # We've handled the last round of the regular check schedule already 
-        # (i.e. the one right before we measure the data qubits out), 
-        # so start at the penultimate round of the regular check schedule.
-        round_minus_2_single_qubit_measurements = [
-            (-2, 0), (-2, 2), (0, 0), (0, 2), (2, 0), (4, 0)]
-        round_minus_2_raw_detector = [
-            round_minus_2_single_qubit_measurements,
-            [],
-            [(-2, 1), (0, 1), (3, 0)]]
-
-        round_minus_3_single_qubit_measurements = [
-            (-4, 2), (-2, -2), (-2, 0), (0, -2), (0, 0), (0, 2), (2, 2), (4, 0), (4, 2)]
-        round_minus_3_raw_detector = [
-            round_minus_3_single_qubit_measurements,
-            [(-3, 2), (2, 0)],
-            [(-1, -2), (3, 2)],
-            [(-2, 1), (0, 1), (3, 0)]]
-            
-        # As in _get_initial_raw_detectors, the next two rounds' detectors are "regular"
-        # in the sense that we just cut off the regular detector at the required round.
-        # But we still need to add the single-qubit measurements to the detectors.
-        round_minus_4_single_qubit_measurements = [
-            (-4, -2), (-4, 0), 
-            (-2, -2), (-2, 0), 
-            (0, -2), (0, 0), (0, 2), 
-            (2, 0), (2, 2), 
-            (4, 0), (4, 2)]
-        round_minus_4_raw_detector = [
-            round_minus_4_single_qubit_measurements,
-            *self._get_raw_big_detector()[-4:]]
-
-        round_minus_5_single_qubit_measurements = [
-            (-4, -2), (-4, 0), 
-            (-2, -2), (-2, 0), 
-            (0, -2), (0, 0), (0, 2), 
-            (2, 0), (2, 2), 
-            (4, -2), (4, 2)]
-        round_minus_5_raw_detector = [
-            round_minus_5_single_qubit_measurements,
-            *self._get_raw_big_detector()[-5:]]
-
-        # Next round is a tiny bit irregular - have to add an extra single-qubit measurement.
-        round_minus_6_single_qubit_measurements = [
-            (-4, -2), (-4, 0),
-            (-2, -2), 
-            (0, -2), (0, 0), (0, 2),
-            (2, -2), (2, 0), (2, 2)]
-        round_minus_6_raw_detector = [
-            round_minus_6_single_qubit_measurements,
-            *self._get_raw_big_detector()[-6:]]
-        round_minus_6_raw_detector[1].append((-2, 0))
-
-        # As regular as can be again.
-        round_minus_7_single_qubit_measurements = [
-            (-4, 0),
-            (-2, 0), 
-            (0, -2), (0, 0),
-            (2, -2), (2, 0)]
-        round_minus_7_raw_detector = [
-            round_minus_7_single_qubit_measurements,
-            *self._get_raw_big_detector()[-7:]]
-        
-        # Important that we stop at round -7! (where round 0 means 
-        # the final round in which we do the single qubit measurements).
-        # The first "full" (not cut off) red detectors start at round -8.
-        # So we want the usual detector schedule to take over at this point. 
-        return [
-            round_minus_2_raw_detector,
-            round_minus_3_raw_detector,
-            round_minus_4_raw_detector,
-            round_minus_5_raw_detector,
-            round_minus_6_raw_detector,
-            round_minus_7_raw_detector]
+        pass
 
     def get_logical_z_0(self):
-        initial_paulis_tile_coordss = [
-            (2, 2),
-            (4, 2),
-            (4, 4),
-            (2, 6),
-            (2, 8),
-            (2, 10),
-            (0, 12),
-            (0, 14),
-            (2, 14),
-        ]
-        initial_paulis_coordss = [
-            tuple(y * self._tile_side_vector + coords)
-            for coords in initial_paulis_tile_coordss
-            for y in range(self._tiles_height)
-        ]
-        # Note no wrapping of coordinates needed above. 
-        initial_paulis = [
-            Pauli(self.data_qubits[coords], PauliLetter("Z"))
-            for coords in initial_paulis_coordss
-        ]
-
-        def update(round: int) -> List[Check]:
-            # Checks to multiply in depends on the parity of the round!
-            if round % 2 == 0:
-                tile_check_anchors = [
-                    (2, 5), 
-                    (2, 14)]
-            else:
-                tile_check_anchors = [
-                    tuple(-self.single_round_shift + (6, 7)), 
-                    tuple(-self.single_round_shift + (2, 14))]
-            # This 2-round pattern then shifts every two rounds.
-            shift = (round // 2) * (self._tile_bottom_vector - 2 * self.single_round_shift)
-            anchors = [
-                self.wrap_straight_coords(
-                    tuple(shift + anchor + y * self._tile_side_vector)
-                )
-                for anchor in tile_check_anchors
-                for y in range(self._tiles_height)
-            ]
-            relative_round = round % self.schedule_length
-            checks_to_multiply_in = [
-                self._dict_based_check_schedule[relative_round][anchor]
-                for anchor in anchors
-            ]
-            return checks_to_multiply_in
-
-        logical = DynamicLogicalOperator(initial_paulis, update)
-        return logical
+        pass
 
 def fault_equivalent_memory_experiment(tiles_width: int, tiles_height: int, total_rounds: int, physical_error_rate: float):
     code = FaultEquivalentFloquetifiedColourCode(tiles_width, tiles_height)
@@ -768,7 +642,11 @@ def fault_equivalent_memory_experiment(tiles_width: int, tiles_height: int, tota
     #     final_measurement_basis,
     #     final_checks,
     #     total_rounds)
-    final_detectors = None
+    final_detectors = code.get_simpler_final_detectors(
+        final_measurement_basis,
+        final_checks,
+        total_rounds)
+    # final_detectors = None
 
     # observables = [code.get_logical_z_0()]
     observables = None
@@ -793,6 +671,7 @@ def print_check_schedules():
 
 # print_check_schedules()
 circuit = fault_equivalent_memory_experiment(3, 1, 48, 0.1)
+print(circuit)
 dem = circuit.detector_error_model(decompose_errors=True, ignore_decomposition_failures=True)
 # print(dem)
 
