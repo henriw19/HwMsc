@@ -619,3 +619,15 @@ def naive_memory_experiment(tiles_width: int, tiles_height: int, total_rounds: i
         final_detectors=final_detectors,
         observables=observables)
     return circuit
+
+# circuit = naive_memory_experiment(9, 9, 13, 0.1)
+# logical_errors = circuit.search_for_undetectable_logical_errors(
+#     dont_explore_detection_event_sets_with_size_above=2,
+#     dont_explore_edges_with_degree_above=2,
+#     dont_explore_edges_increasing_symptom_degree=True,
+#     canonicalize_circuit_errors=True)
+# for logical_error in logical_errors:
+#     print(logical_error)
+# print(circuit.num_qubits)
+# print(len(circuit.shortest_graphlike_error()))
+# dem = circuit.detector_error_model(decompose_errors=True, ignore_decomposition_failures=True)

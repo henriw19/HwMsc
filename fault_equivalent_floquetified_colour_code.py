@@ -1,9 +1,9 @@
 from collections import Counter
+from math import gcd
 from typing import Tuple, List, Dict
 from pathlib import Path
 from datetime import datetime
 
-from main.utils.utils import output_path
 import numpy as np
 from main.building_blocks.Check import Check
 from main.building_blocks.Qubit import Qubit
@@ -11,7 +11,7 @@ from main.building_blocks.detectors.Detector import Detector
 from main.building_blocks.logical.DynamicLogicalOperator import DynamicLogicalOperator
 from main.building_blocks.pauli import Pauli
 from main.building_blocks.pauli.PauliLetter import PauliLetter
-from main.codes.Code import Code
+from main.codes.Code import Code, LogicalQubit
 from main.compiling.compilers.AncillaPerCheckCompiler import AncillaPerCheckCompiler
 from main.compiling.compilers.Compiler import Compiler
 from main.compiling.compilers.NativePauliProductMeasurementsCompiler import NativePauliProductMeasurementsCompiler
@@ -27,14 +27,15 @@ from utils import flatten_dicts
 
 class FaultEquivalentFloquetifiedColourCode(Code):
     def __init__(self, tiles_width: int, tiles_height: int):
-        if tiles_width <= 0 or tiles_width % 3 != 0:
-            raise ValueError(
-                "Width in terms of tiles must be a positive multiple of 3. " +
-                f"Instead, got {tiles_width}")
-        if tiles_height <= 0:
-            raise ValueError(
-                "Height in terms of tiles must be a positive number. " +
-                f"Instead, got {tiles_height}")
+        # if tiles_width <= 0 or tiles_width % 3 != 0:
+        #     raise ValueError(
+        #         "Width in terms of tiles must be a positive multiple of 3. " +
+        #         f"Instead, got {tiles_width}")
+        # if tiles_height <= 0:
+        #     raise ValueError(
+        #         "Height in terms of tiles must be a positive integer. " +
+        #         f"Instead, got {tiles_height}")
+
         # Code is made out of tiles.
         # Unlike naive case, tile can sort of be seen as three third-tiles, 
         # rather than two half-tiles.
@@ -53,6 +54,8 @@ class FaultEquivalentFloquetifiedColourCode(Code):
         self._third_tile_side_vector = np.array([-2, 10])
         self._tile_bottom_vector = self._third_tile_bottom_vector
         self._tile_side_vector = 3 * self._third_tile_side_vector
+
+        # print(self.to_wonky_coords(tuple(self._tile_bottom_vector)))
 
         bottom_right = tiles_width * np.array(self._tile_bottom_vector)
         top_left = tiles_height * np.array(self._tile_side_vector)
@@ -380,7 +383,7 @@ class FaultEquivalentFloquetifiedColourCode(Code):
                 initial_detector_schedule[round].append(detector)
         
         # Next handle all of the small types of detectors. 
-        # All of these only span two rounds, so can only be cut off in rounds 0 and 1.
+        # All of these only span three rounds, so can only be cut off in rounds 0 and 1.
         # Some of them form green detectors in even rounds and red detectors in odd rounds, 
         # while the rest form green detectors in odd rounds and red detectors in even rounds.
         even_round_green_anchored_raw_detectors = [
@@ -488,11 +491,9 @@ class FaultEquivalentFloquetifiedColourCode(Code):
                     (-1, final_regular_check)]
                 detector = Detector(timed_checks, 0, anchor)
                 final_detectors.append(detector)
-        
-        # Next up it's the six types of small detectors
-
+                
         # Next handle all of the small types of detectors. 
-        # All of these only span two rounds, so can only be cut off in rounds 0 and 1.
+        # All of these only span three rounds, so can only be cut off in the final and penultimate round.
         # Some of them form green detectors in even rounds and red detectors in odd rounds, 
         # while the rest form green detectors in odd rounds and red detectors in even rounds.
         even_round_green_anchored_raw_detectors = [
@@ -600,8 +601,6 @@ class FaultEquivalentFloquetifiedColourCode(Code):
         cutoff_detector = Detector(timed_checks, relative_very_final_round, final_round_anchor)
         return cutoff_detector
 
-
-
     def get_final_detectors(
             self, 
             final_measurement_basis: PauliLetter,
@@ -614,13 +613,89 @@ class FaultEquivalentFloquetifiedColourCode(Code):
         pass
 
     def get_logical_z_0(self):
-        pass
+        initial_paulis_two_by_two_tile_coordss = [
+            (4, 4),
+            (4, 8),
+            (4, 12),
+            (2, 12),
+            (4, 14),
+            (2, 16),
+            (4, 18),
+            (2, 20),
+            (2, 22),
+            (4, 22),
+            (2, 26),
+            (2, 30),
+            (0, 34),
+            (2, 34),
+            (2, 36),
+            (0, 38),
+            (0, 40),
+            (2, 40),
+            (0, 44),
+            (0, 48),
+            (0, 52),
+            (0, 56),
+            (-2, 56),
+            (0, 58),
+            (-2, 60),
+            (-2, 62),
+            (0, 62)
+        ]
+        # Logical wraps around the torus in a wonky fashion - 
+        # So figure out how many tiles this is!
+        covering_space_width = self._tiles_height // (gcd(self._tiles_height, 2 * self._tiles_width))
+        covering_space_height = (covering_space_width * (2 * self._tiles_width)) // self._tiles_height
+        two_by_two_tiles_needed = (covering_space_height * self._tiles_height) // 2
+        # Write down the vector by which to shift each two by two tile 
+        # to get the next one. 
+        two_by_two_tiles_shift = self._tile_bottom_vector + 2 * self._tile_side_vector
+        initial_paulis_coordss = [
+            self.wrap_straight_coords(tuple(i * two_by_two_tiles_shift + coords))
+            for coords in initial_paulis_two_by_two_tile_coordss
+            for i in range(two_by_two_tiles_needed)
+        ]
+        initial_paulis = [
+            Pauli(self.data_qubits[coords], PauliLetter("Z"))
+            for coords in initial_paulis_coordss
+        ]
+
+        def update(round: int) -> List[Check]:
+            # Checks to multiply in depends on the parity of the round!
+            if round % 2 == 0:
+                tile_check_anchors = [
+                    (2, 19), 
+                    (4, 22)]
+            else:
+                tile_check_anchors = [
+                    (6, -7), 
+                    (4, -10)]
+            # This 2-round pattern then shifts every two rounds.
+            two_round_shift = (round // 2) * (self._tile_bottom_vector - 2 * self.single_round_shift)
+            anchors = [
+                self.wrap_straight_coords(
+                    tuple(two_round_shift + anchor + i * two_by_two_tiles_shift)
+                )
+                for anchor in tile_check_anchors
+                for i in range(two_by_two_tiles_needed)
+            ]
+            relative_round = round % self.schedule_length
+            checks_to_multiply_in = [
+                self._dict_based_check_schedule[relative_round][anchor]
+                for anchor in anchors
+            ]
+            return checks_to_multiply_in
+
+        logical = DynamicLogicalOperator(initial_paulis, update)
+        return logical
 
 def fault_equivalent_memory_experiment(tiles_width: int, tiles_height: int, total_rounds: int, physical_error_rate: float):
     code = FaultEquivalentFloquetifiedColourCode(tiles_width, tiles_height)
     p = physical_error_rate
-    # noise_model = CircuitLevelNoise(p, p, p, p, p)
-    noise_model = NoNoise()
+    noise_model = CircuitLevelNoise(p, p, p, p, p)
+    # Can turn off idling noise
+    # noise_model = CircuitLevelNoise(p, None, p, p, p)
+    # noise_model = NoNoise()
     syndrome_extractor = NativePauliProductMeasurementsExtractor()
     compiler = NativePauliProductMeasurementsCompiler(noise_model, syndrome_extractor)
 
@@ -648,8 +723,8 @@ def fault_equivalent_memory_experiment(tiles_width: int, tiles_height: int, tota
         total_rounds)
     # final_detectors = None
 
-    # observables = [code.get_logical_z_0()]
-    observables = None
+    observables = [code.get_logical_z_0()]
+    # observables = None
 
     circuit = compiler.compile_to_stim(
         code,
@@ -662,17 +737,28 @@ def fault_equivalent_memory_experiment(tiles_width: int, tiles_height: int, tota
     return circuit
 
 def print_check_schedules():
-    project_root = Path('/Users/teague/Coding/Research/Quantum/HwMsc')
     now = datetime.now().strftime('%Y%m%d_%H%M%S')
-    output_path = Path(project_root / f'printouts/FaultEquivalent/{now}')
-    code = FaultEquivalentFloquetifiedColourCode(3, 2)
+    output_path = Path(project_root / f'printouts/{now}/FaultEquivalent')
+    code = FaultEquivalentFloquetifiedColourCode(6, 4)
+    logical_qubit = LogicalQubit(z=code.get_logical_z_0())
+    code.logical_qubits = [logical_qubit]
     printer = Printer2D()
-    printer.print_code(code, output_path, print_logicals=False)
+    printer.print_code(code, output_path, print_logicals=True)
 
+project_root = Path('/Users/teague/Coding/Research/Quantum/HwMsc')
 # print_check_schedules()
-circuit = fault_equivalent_memory_experiment(3, 1, 48, 0.1)
-print(circuit)
-dem = circuit.detector_error_model(decompose_errors=True, ignore_decomposition_failures=True)
+# circuit = fault_equivalent_memory_experiment(9, 9, 48, 0.1)
+# print(len(circuit.shortest_graphlike_error()))
+# logical_errors = circuit.search_for_undetectable_logical_errors(
+#     dont_explore_detection_event_sets_with_size_above=2,
+#     dont_explore_edges_with_degree_above=2,
+#     dont_explore_edges_increasing_symptom_degree=True,
+#     canonicalize_circuit_errors=True)
+# for logical_error in logical_errors:
+#     print(logical_error)
+# dem = circuit.detector_error_model(decompose_errors=True, ignore_decomposition_failures=True)
+# with open(project_root / 'fault_equivalent_floquetified_colour_code_dem.txt', 'w') as f:
+#     f.write(str(dem))
 # print(dem)
 
 

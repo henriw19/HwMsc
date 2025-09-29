@@ -1,7 +1,9 @@
 
 from typing import Callable
 
+from twisted_fault_equivalent_floquetified_colour_code import twisted_fault_equivalent_memory_experiment
 from naive_floquetified_colour_code import naive_memory_experiment
+from fault_equivalent_floquetified_colour_code import fault_equivalent_memory_experiment
 from datetime import datetime
 from ldpc import BpOsdDecoder
 import stim
@@ -9,6 +11,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 import json
 from tqdm import tqdm
+import cProfile
+import pstats
+import io
 
 def extract_index_from_target(target: stim.DemTarget):
     s = str(target)
@@ -60,6 +65,9 @@ def dem_to_parity_check_matrix(dem: stim.DetectorErrorModel):
 
 def simulate(
         create_circuit: Callable[[int, int, int, float], stim.Circuit],
+        get_tiles_width: Callable[[int], int],
+        get_tiles_height: Callable[[int], int],
+        get_total_rounds: Callable[[int], int],
         shots: int,
         output_filename: str,    
         plot_title: str,
@@ -94,15 +102,12 @@ def simulate(
     # # count logical errors
     # print(np.count_nonzero(np.any(predicted_obs_flips != actual_obs_flips, axis=1))/shots)   
 
-    
-    # threshold generator:
-    min_size, max_size = 1, 4
+    sizes = [1, 2, 3]
     simulation_data = {}
-
-    for size in range(min_size, max_size):
-        tiles_width = 3 * (2 * size - 1)
-        tiles_height = 2 * size - 1
-        total_rounds = 13 * size
+    for size in sizes:
+        tiles_width = get_tiles_width(size)
+        tiles_height = get_tiles_height(size)
+        total_rounds = get_total_rounds(size)
         code_data = {
             "tiles_width": tiles_width,
             "tiles_height": tiles_height,
@@ -113,7 +118,8 @@ def simulate(
         simulation_data[code_key] = code_data
 
         # for physical_error_rate in np.logspace(-5,-1,5):
-        for physical_error_rate in np.logspace(-2,-1,5):
+        for physical_error_rate in np.logspace(-4,-1,4):
+        # for physical_error_rate in [0.5]:
             physical_error_rate_data = {
                 "physical_error_rate": physical_error_rate,
                 "shots": shots,
@@ -122,33 +128,41 @@ def simulate(
 
             print(f"Creating code...")
             circuit = create_circuit(tiles_width, tiles_height, total_rounds, physical_error_rate)
-            dem = circuit.detector_error_model(decompose_errors=True, ignore_decomposition_failures=True)
-            print(f"Shortest graphlike error: {len(dem.shortest_graphlike_error())}")
+            dem = circuit.detector_error_model(
+                decompose_errors=True, 
+                ignore_decomposition_failures=True,
+                approximate_disjoint_errors=True)
+            # print(f"Shortest graphlike error: {len(dem.shortest_graphlike_error())}")
             detector_pcm, observable_pcm = dem_to_parity_check_matrix(dem)
             sampler = circuit.compile_detector_sampler()
             print(f"Sampling...")
             detector_samples, observable_samples = sampler.sample(shots=shots, separate_observables=True)
+            # print(detector_samples)
+            # print(observable_samples)
 
             num_observables = observable_pcm.shape[1]
             word_errors = [0 for _ in range(num_observables)]
             any_errors = 0
 
             print(f"Decoding...")
+            bp_osd_decoder = BpOsdDecoder(
+                detector_pcm.T,
+                error_rate = 0.,
+                bp_method = 'product_sum',
+                max_iter = 1,
+                schedule = 'serial',
+                osd_method = 'osd_0', #set to OSD_0 for fast solve
+                osd_order = 0
+            )
             for i in tqdm(range(shots)):
-                bp_osd_decoder = BpOsdDecoder(
-                    detector_pcm.T,
-                    error_rate = 0.,
-                    bp_method = 'product_sum',
-                    max_iter = 1,
-                    schedule = 'serial',
-                    osd_method = 'osd_0', #set to OSD_0 for fast solve
-                    osd_order = 0
-                )
                 error_guess = bp_osd_decoder.decode(detector_samples[i])
                 any_logical_error = False
                 for j in range(num_observables):
+                    # print(observable_pcm[:, j].T)
+                    # print(np.array(error_guess).astype(int))
                     observables_flipped_guess = sum(observable_pcm[:, j].T * np.array(error_guess).astype(int)) % 2
                     observables_flipped_actual = observable_samples[i][j]
+                    # print((observables_flipped_guess, observables_flipped_actual))
                     logical_error = observables_flipped_actual != observables_flipped_guess
                     word_errors[j] += int(logical_error)
                     any_logical_error = any_logical_error or logical_error
@@ -181,8 +195,39 @@ def simulate(
     plt.legend()
     plt.savefig(f"data/{output_filename}_shots_{shots}_{now}.png")
 
-simulate(
-    naive_memory_experiment, 
-    500, 
-    "naive_floquetified_colour_code", 
-    "Naive Floquetified Colour Code")
+if __name__ == "__main__":
+    # pr = cProfile.Profile()
+    # pr.enable()
+
+    # simulate(
+    #     naive_memory_experiment, 
+    #     lambda size: 3 * (2 * size - 1),
+    #     lambda size: 2 * size - 1,
+    #     lambda size: 13 * size,
+    #     500, 
+    #     "naive_floquetified_colour_code", 
+    #     "Naive Floquetified Colour Code")
+
+    simulate(
+        fault_equivalent_memory_experiment, 
+        lambda size: 3 * size,
+        lambda size: 3 * size,
+        lambda size: 48,
+        500, 
+        "fault_equivalent_floquetified_colour_code", 
+        "Fault Equivalent Floquetified Colour Code")
+    
+    # simulate(
+    #     twisted_fault_equivalent_memory_experiment, 
+    #     lambda size: 3 * size,
+    #     lambda size: 2,
+    #     lambda size: 48,
+    #     1000, 
+    #     "twisted_fault_equivalent_floquetified_colour_code", 
+    #     "Twisted Fault Equivalent Floquetified Colour Code")
+
+    # pr.disable()
+    # s = io.StringIO()
+    # sortby = pstats.SortKey.CUMULATIVE
+    # ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
+    # ps.dump_stats("profile_data.prof")
