@@ -16,6 +16,7 @@ from main.compiling.compilers.AncillaPerCheckCompiler import AncillaPerCheckComp
 from main.compiling.compilers.Compiler import Compiler
 from main.compiling.compilers.NativePauliProductMeasurementsCompiler import NativePauliProductMeasurementsCompiler
 from main.compiling.noise.models.NoNoise import NoNoise
+from main.compiling.noise.models.NoiseModel import NoiseModel
 from main.compiling.syndrome_extraction.extractors.NativePauliProductMeasurementsExtractor import \
     NativePauliProductMeasurementsExtractor
 from main.compiling.noise.models.CircuitLevelNoise import CircuitLevelNoise
@@ -689,13 +690,8 @@ class FaultEquivalentFloquetifiedColourCode(Code):
         logical = DynamicLogicalOperator(initial_paulis, update)
         return logical
 
-def fault_equivalent_memory_experiment(tiles_width: int, tiles_height: int, total_rounds: int, physical_error_rate: float):
+def fault_equivalent_memory_experiment(tiles_width: int, tiles_height: int, total_rounds: int, noise_model: NoiseModel):
     code = FaultEquivalentFloquetifiedColourCode(tiles_width, tiles_height)
-    p = physical_error_rate
-    noise_model = CircuitLevelNoise(p, p, p, p, p)
-    # Can turn off idling noise
-    # noise_model = CircuitLevelNoise(p, None, p, p, p)
-    # noise_model = NoNoise()
     syndrome_extractor = NativePauliProductMeasurementsExtractor()
     compiler = NativePauliProductMeasurementsCompiler(noise_model, syndrome_extractor)
 
@@ -747,11 +743,12 @@ def print_check_schedules():
 
 project_root = Path('/Users/teague/Coding/Research/Quantum/HwMsc')
 # print_check_schedules()
-# circuit = fault_equivalent_memory_experiment(9, 9, 48, 0.1)
+# noise_model = CircuitLevelNoise(0.1, None, 0.1, 0.1, 0.1)
+# circuit = fault_equivalent_memory_experiment(3, 3, 48, noise_model)
 # print(len(circuit.shortest_graphlike_error()))
 # logical_errors = circuit.search_for_undetectable_logical_errors(
-#     dont_explore_detection_event_sets_with_size_above=2,
-#     dont_explore_edges_with_degree_above=2,
+#     dont_explore_detection_event_sets_with_size_above=4,
+#     dont_explore_edges_with_degree_above=5,
 #     dont_explore_edges_increasing_symptom_degree=True,
 #     canonicalize_circuit_errors=True)
 # for logical_error in logical_errors:

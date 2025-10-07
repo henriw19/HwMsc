@@ -1,5 +1,6 @@
 from typing import Tuple, List, Dict
 
+from main.compiling.noise.models.NoiseModel import NoiseModel
 import numpy as np
 from main.building_blocks.Check import Check
 from main.building_blocks.Qubit import Qubit
@@ -586,10 +587,8 @@ class NaiveFloquetifiedColourCode(Code):
         logical = DynamicLogicalOperator(initial_paulis, update)
         return logical
 
-def naive_memory_experiment(tiles_width: int, tiles_height: int, total_rounds: int, physical_error_rate: float):
+def naive_memory_experiment(tiles_width: int, tiles_height: int, total_rounds: int, noise_model: NoiseModel):
     code = NaiveFloquetifiedColourCode(tiles_width, tiles_height)
-    p = physical_error_rate
-    noise_model = CircuitLevelNoise(p, p, p, p, p)
     syndrome_extractor = NativePauliProductMeasurementsExtractor()
     compiler = NativePauliProductMeasurementsCompiler(noise_model, syndrome_extractor)
 

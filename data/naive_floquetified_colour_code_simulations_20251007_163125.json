@@ -1,0 +1,215 @@
+{
+    "(3, 1, 13)": {
+        "tiles_width": 3,
+        "tiles_height": 1,
+        "total_rounds": 13,
+        "simulations": {
+            "0.0001": {
+                "initialisation": 0.0001,
+                "idling": 0.0001,
+                "one_qubit_gate": 0.0001,
+                "two_qubit_gate": 0.0001,
+                "measurement": 0.0001,
+                "shots": 1000,
+                "word_errors": [
+                    7
+                ],
+                "any_errors": 7,
+                "word_error_rates": [
+                    0.007
+                ],
+                "any_error_rate": 0.007
+            },
+            "0.001": {
+                "initialisation": 0.001,
+                "idling": 0.001,
+                "one_qubit_gate": 0.001,
+                "two_qubit_gate": 0.001,
+                "measurement": 0.001,
+                "shots": 1000,
+                "word_errors": [
+                    87
+                ],
+                "any_errors": 87,
+                "word_error_rates": [
+                    0.087
+                ],
+                "any_error_rate": 0.087
+            },
+            "0.01": {
+                "initialisation": 0.01,
+                "idling": 0.01,
+                "one_qubit_gate": 0.01,
+                "two_qubit_gate": 0.01,
+                "measurement": 0.01,
+                "shots": 1000,
+                "word_errors": [
+                    466
+                ],
+                "any_errors": 466,
+                "word_error_rates": [
+                    0.466
+                ],
+                "any_error_rate": 0.466
+            },
+            "0.1": {
+                "initialisation": 0.1,
+                "idling": 0.1,
+                "one_qubit_gate": 0.1,
+                "two_qubit_gate": 0.1,
+                "measurement": 0.1,
+                "shots": 1000,
+                "word_errors": [
+                    481
+                ],
+                "any_errors": 481,
+                "word_error_rates": [
+                    0.481
+                ],
+                "any_error_rate": 0.481
+            }
+        }
+    },
+    "(9, 3, 26)": {
+        "tiles_width": 9,
+        "tiles_height": 3,
+        "total_rounds": 26,
+        "simulations": {
+            "0.0001": {
+                "initialisation": 0.0001,
+                "idling": 0.0001,
+                "one_qubit_gate": 0.0001,
+                "two_qubit_gate": 0.0001,
+                "measurement": 0.0001,
+                "shots": 1000,
+                "word_errors": [
+                    77
+                ],
+                "any_errors": 77,
+                "word_error_rates": [
+                    0.077
+                ],
+                "any_error_rate": 0.077
+            },
+            "0.001": {
+                "initialisation": 0.001,
+                "idling": 0.001,
+                "one_qubit_gate": 0.001,
+                "two_qubit_gate": 0.001,
+                "measurement": 0.001,
+                "shots": 1000,
+                "word_errors": [
+                    429
+                ],
+                "any_errors": 429,
+                "word_error_rates": [
+                    0.429
+                ],
+                "any_error_rate": 0.429
+            },
+            "0.01": {
+                "initialisation": 0.01,
+                "idling": 0.01,
+                "one_qubit_gate": 0.01,
+                "two_qubit_gate": 0.01,
+                "measurement": 0.01,
+                "shots": 1000,
+                "word_errors": [
+                    514
+                ],
+                "any_errors": 514,
+                "word_error_rates": [
+                    0.514
+                ],
+                "any_error_rate": 0.514
+            },
+            "0.1": {
+                "initialisation": 0.1,
+                "idling": 0.1,
+                "one_qubit_gate": 0.1,
+                "two_qubit_gate": 0.1,
+                "measurement": 0.1,
+                "shots": 1000,
+                "word_errors": [
+                    504
+                ],
+                "any_errors": 504,
+                "word_error_rates": [
+                    0.504
+                ],
+                "any_error_rate": 0.504
+            }
+        }
+    },
+    "(15, 5, 39)": {
+        "tiles_width": 15,
+        "tiles_height": 5,
+        "total_rounds": 39,
+        "simulations": {
+            "0.0001": {
+                "initialisation": 0.0001,
+                "idling": 0.0001,
+                "one_qubit_gate": 0.0001,
+                "two_qubit_gate": 0.0001,
+                "measurement": 0.0001,
+                "shots": 1000,
+                "word_errors": [
+                    225
+                ],
+                "any_errors": 225,
+                "word_error_rates": [
+                    0.225
+                ],
+                "any_error_rate": 0.225
+            },
+            "0.001": {
+                "initialisation": 0.001,
+                "idling": 0.001,
+                "one_qubit_gate": 0.001,
+                "two_qubit_gate": 0.001,
+                "measurement": 0.001,
+                "shots": 1000,
+                "word_errors": [
+                    484
+                ],
+                "any_errors": 484,
+                "word_error_rates": [
+                    0.484
+                ],
+                "any_error_rate": 0.484
+            },
+            "0.01": {
+                "initialisation": 0.01,
+                "idling": 0.01,
+                "one_qubit_gate": 0.01,
+                "two_qubit_gate": 0.01,
+                "measurement": 0.01,
+                "shots": 1000,
+                "word_errors": [
+                    488
+                ],
+                "any_errors": 488,
+                "word_error_rates": [
+                    0.488
+                ],
+                "any_error_rate": 0.488
+            },
+            "0.1": {
+                "initialisation": 0.1,
+                "idling": 0.1,
+                "one_qubit_gate": 0.1,
+                "two_qubit_gate": 0.1,
+                "measurement": 0.1,
+                "shots": 1000,
+                "word_errors": [
+                    510
+                ],
+                "any_errors": 510,
+                "word_error_rates": [
+                    0.51
+                ],
+                "any_error_rate": 0.51
+            }
+        }
+    }
+}

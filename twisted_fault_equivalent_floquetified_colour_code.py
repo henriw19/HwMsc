@@ -16,6 +16,7 @@ from main.compiling.compilers.AncillaPerCheckCompiler import AncillaPerCheckComp
 from main.compiling.compilers.Compiler import Compiler
 from main.compiling.compilers.NativePauliProductMeasurementsCompiler import NativePauliProductMeasurementsCompiler
 from main.compiling.noise.models.NoNoise import NoNoise
+from main.compiling.noise.models.NoiseModel import NoiseModel
 from main.compiling.syndrome_extraction.extractors.NativePauliProductMeasurementsExtractor import \
     NativePauliProductMeasurementsExtractor
 from main.compiling.noise.models.CircuitLevelNoise import CircuitLevelNoise
@@ -112,12 +113,8 @@ class TwistedFaultEquivalentFloquetifiedColourCode(FaultEquivalentFloquetifiedCo
         return logical
 
 
-def twisted_fault_equivalent_memory_experiment(tiles_width: int, tiles_height: int, total_rounds: int, physical_error_rate: float):
+def twisted_fault_equivalent_memory_experiment(tiles_width: int, tiles_height: int, total_rounds: int, noise_model: NoiseModel):
     code = TwistedFaultEquivalentFloquetifiedColourCode(tiles_width, tiles_height)
-    p = physical_error_rate
-    # noise_model = CircuitLevelNoise(p, p, p, p, p)
-    noise_model = CircuitLevelNoise(p, None, p, p, p)
-    # noise_model = NoNoise()
     syndrome_extractor = NativePauliProductMeasurementsExtractor()
     compiler = NativePauliProductMeasurementsCompiler(noise_model, syndrome_extractor)
 

@@ -1,5 +1,8 @@
 
-from typing import Callable
+from typing import Callable, Tuple
+
+from main.compiling.noise.models.CircuitLevelNoise import CircuitLevelNoise
+from main.compiling.noise.models.NoiseModel import NoiseModel
 
 from twisted_fault_equivalent_floquetified_colour_code import twisted_fault_equivalent_memory_experiment
 from naive_floquetified_colour_code import naive_memory_experiment
@@ -68,6 +71,7 @@ def simulate(
         get_tiles_width: Callable[[int], int],
         get_tiles_height: Callable[[int], int],
         get_total_rounds: Callable[[int], int],
+        get_noise_model_args: Callable[[float], Tuple[float|None, float|None, float|None, float|None, float|None]],
         shots: int,
         output_filename: str,    
         plot_title: str,
@@ -120,14 +124,20 @@ def simulate(
         # for physical_error_rate in np.logspace(-5,-1,5):
         for physical_error_rate in np.logspace(-4,-1,4):
         # for physical_error_rate in [0.5]:
-            physical_error_rate_data = {
-                "physical_error_rate": physical_error_rate,
+            noise_model_args = get_noise_model_args(physical_error_rate)
+            noise_model = CircuitLevelNoise(*noise_model_args)
+            noise_model_data = {
+                "initialisation": noise_model_args[0],
+                "idling": noise_model_args[1],
+                "one_qubit_gate": noise_model_args[2],
+                "two_qubit_gate": noise_model_args[3],
+                "measurement": noise_model_args[4],
                 "shots": shots,
             }
-            code_data["simulations"][physical_error_rate] = physical_error_rate_data
+            code_data["simulations"][physical_error_rate] = noise_model_data
 
             print(f"Creating code...")
-            circuit = create_circuit(tiles_width, tiles_height, total_rounds, physical_error_rate)
+            circuit = create_circuit(tiles_width, tiles_height, total_rounds, noise_model)
             dem = circuit.detector_error_model(
                 decompose_errors=True, 
                 ignore_decomposition_failures=True,
@@ -171,10 +181,10 @@ def simulate(
             word_error_rates = [errors/shots for errors in word_errors]
             any_error_rate = any_errors/shots
 
-            physical_error_rate_data["word_errors"] = word_errors
-            physical_error_rate_data["any_errors"] = any_errors
-            physical_error_rate_data["word_error_rates"] = word_error_rates
-            physical_error_rate_data["any_error_rate"] = any_error_rate
+            noise_model_data["word_errors"] = word_errors
+            noise_model_data["any_errors"] = any_errors
+            noise_model_data["word_error_rates"] = word_error_rates
+            noise_model_data["any_error_rate"] = any_error_rate
 
     now = datetime.now().strftime('%Y%m%d_%H%M%S')
     with open(f"data/{output_filename}_simulations_{now}.json", 'w') as file:
@@ -199,32 +209,35 @@ if __name__ == "__main__":
     # pr = cProfile.Profile()
     # pr.enable()
 
-    # simulate(
-    #     naive_memory_experiment, 
-    #     lambda size: 3 * (2 * size - 1),
-    #     lambda size: 2 * size - 1,
-    #     lambda size: 13 * size,
-    #     500, 
-    #     "naive_floquetified_colour_code", 
-    #     "Naive Floquetified Colour Code")
-
     simulate(
-        fault_equivalent_memory_experiment, 
-        lambda size: 3 * size,
-        lambda size: 3 * size,
-        lambda size: 48,
-        500, 
-        "fault_equivalent_floquetified_colour_code", 
-        "Fault Equivalent Floquetified Colour Code")
+        naive_memory_experiment, 
+        lambda size: 3 * (2 * size - 1),
+        lambda size: 2 * size - 1,
+        lambda size: 13 * size,
+        lambda p: (p, p, p, p, p),
+        1000, 
+        "naive_floquetified_colour_code", 
+        "Naive Floquetified Colour Code")
+
+    # simulate(
+    #     fault_equivalent_memory_experiment, 
+    #     lambda size: 3 * size,
+    #     lambda size: 3 * size,
+    #     lambda size: 48,
+    #     lambda p: (p, None, p, p, p),
+    #     1000, 
+    #     "fault_equivalent_floquetified_colour_code_no_idling", 
+    #     "Fault Equivalent Floquetified Colour Code - No Idling")
     
     # simulate(
     #     twisted_fault_equivalent_memory_experiment, 
     #     lambda size: 3 * size,
     #     lambda size: 2,
     #     lambda size: 48,
+    #     lambda p: (p, None, p, p, p),
     #     1000, 
-    #     "twisted_fault_equivalent_floquetified_colour_code", 
-    #     "Twisted Fault Equivalent Floquetified Colour Code")
+    #     "twisted_fault_equivalent_floquetified_colour_code_no_idling", 
+    #     "Twisted Fault Equivalent Floquetified Colour Code - No Idling")
 
     # pr.disable()
     # s = io.StringIO()
