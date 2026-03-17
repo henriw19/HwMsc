@@ -750,17 +750,6 @@ def extract_index_from_target(target: stim.DemTarget):
     else:
         raise ValueError(f"Unknown target: {s}")
 
-def extract_index_from_target(target: stim.DemTarget):
-    s = str(target)
-    if s == "^":
-        return None, None
-    if s.startswith("D"):
-        return "D", int(s[1:])
-    elif s.startswith("L"):
-        return "L", int(s[1:])
-    else:
-        raise ValueError(f"Unknown target: {s}")
-
 def dem_to_parity_check_matrix(dem: stim.DetectorErrorModel, include_observables=False):
     data = []
     for error_instruction in dem:
@@ -805,106 +794,9 @@ def generate_random_binary_array(L_x, L_y, L_t, p):
     
     return array
 
-def main():
-    L_x = 3      # number of horizontal "tiles"
-    L_y = 3      # number of vertical "tiles"
-    L_t = 14     # number of timesteps: (multiples of 13) + 1
-
+def create_circuit(L_x, L_y, L_t, p):
     circuit, measurements, final_measurements = floquetcolour(L_x,L_y,L_t,0)
     circuit = addxdetectors(circuit,measurements,final_measurements, L_x,L_y,L_t)
     circuit = addzdetectors(circuit,measurements,final_measurements, L_x,L_y,L_t)
 
     circuit = addnoise(circuit,{"H", "R", "M","CZ"},0.25,0.25) #(circuit, faulty gates, single qubit noise, multi qubit noise)
-    dem = circuit.detector_error_model(decompose_errors=True,ignore_decomposition_failures=True)
-
-    # Decode with BP+OSD
-    # DemMatrices = detector_error_model_to_check_matrices(dem, allow_undecomposed_hyperedges=True)
-    # sampler = circuit.compile_detector_sampler()
-    # samples,b= sampler.sample(shots=1, separate_observables=True)
-    # altpcm = dem_to_parity_check_matrix(dem, include_observables=False)[:-20*L_x*L_y]
-    # bp_osd = BpOsdDecoder(
-    #         altpcm.T,
-    #         error_rate = 0.,
-    #         bp_method = 'product_sum',
-    #         max_iter = 1,
-    #         schedule = 'serial',
-    #         osd_method = 'osd_0', #set to OSD_0 for fast solve
-    #         osd_order = 0
-    #     )
-    
-    # decoding = bp_osd.decode(samples[0])
-    # print("decoding worked?",np.array_equal(altpcm.T @ decoding %2, samples[0].astype(int)))
-
-    # Decode with Chromobius.
-    # shots = 1
-    # dets, actual_obs_flips = circuit.compile_detector_sampler().sample(
-    #     shots=shots,
-    #     separate_observables=True,
-    #     bit_packed=True,
-    # )
-    # decoder = chromobius.compile_decoder_for_dem(circuit.detector_error_model())
-    # predicted_obs_flips = decoder.predict_obs_flips_from_dets_bit_packed(dets)
-    # # count logical errors
-    # print(np.count_nonzero(np.any(predicted_obs_flips != actual_obs_flips, axis=1))/shots)   
-
-    
-    # threshold generator:
-    shots = 1000
-    counter =  [{} for _ in range(1)]
-    for j,size in enumerate([3]):
-        L_x = size
-        L_y = size     
-        L_t = 14      
-
-        for p in np.logspace(-5,-1,5):
-            log_err = 0
-            circuit, measurements, final_measurements = floquetcolour(L_x,L_y,L_t,0)
-            circuit = addzdetectors(circuit,measurements,final_measurements, L_x,L_y,L_t)
-            circuit = addnoise(circuit,{"H", "R", "M","CZ"},p,p)
-            dem = circuit.detector_error_model(decompose_errors=True, ignore_decomposition_failures=True)
-            altpcm = dem_to_parity_check_matrix(dem, include_observables=False)[:-20*L_x*L_y]
-            output = io.StringIO()
-            dem.to_file(output)
-            lines = output.getvalue().splitlines()
-            logical_error_array = np.array([1 if "L0" in line else 0 for line in lines][:-20*L_x*L_y])
-            for i in range(shots):
-                sampler = circuit.compile_detector_sampler()
-                samples,b= sampler.sample(shots=1, separate_observables=True)
-
-                bp_osd = BpOsdDecoder(
-                altpcm.T,
-                error_rate = 0.,
-                bp_method = 'product_sum',
-                max_iter = 1,
-                schedule = 'serial',
-                osd_method = 'osd_0', #set to OSD_0 for fast solve
-                osd_order = 0
-                )
-                decoding = bp_osd.decode(samples[0])
-                if b != (sum(logical_error_array * np.array(decoding).astype(int)) %2):
-                    log_err += 1
-            
-            counter[j][p] = log_err/shots
-        # plt.figure()
-
-    for i, data in enumerate(counter):
-        x = sorted(data.keys())           # sortiert die Keys
-        y = [data[k] for k in x]
-        plt.plot(x, y, marker='o', label=f'L = {int(3*i)}')
-        data = np.column_stack((x, y))
-        # np.savetxt(f"img/data6.txt", data, header="x y", comments="")
-    # Stack and save to a .txt file
-
-    
-
-    plt.xscale('log')
-    plt.yscale('log')
-    plt.xlabel('physical error rate')
-    plt.ylabel('logical error rate')
-    plt.title('Floquet colour code')
-    plt.grid(True, which='both', ls='--')
-    plt.legend()
-    plt.savefig("data/testt.png")
-
-if __name__ == "__main__":
-    main()
